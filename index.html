@@ -1,0 +1,2841 @@
+gi<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>SJK Workings</title>
+<style>
+  :root{
+    --bg:#F7F5F0; --card:#FFFFFF; --line:#E2DED3; --line-strong:#C9C3B2;
+    --text:#2B2A26; --muted:#766F60; --accent:#9C6B2E; --accent-bg:#F1E4D0;
+    --danger:#B23B2E; --danger-bg:#F8E6E2; --good:#3B6B3F;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:Arial,Helvetica,sans-serif;}
+  .wrap{max-width:1080px;margin:0 auto;padding:24px 20px 60px;}
+  h1{font-size:22px;font-weight:600;letter-spacing:.3px;margin:0 0 4px;}
+  .sub{color:var(--muted);font-size:13px;margin:0 0 20px;font-family:Arial,Helvetica,sans-serif;}
+  .tabs{display:flex;gap:0;border-bottom:1px solid var(--line-strong);margin-bottom:20px;}
+  .tab{padding:10px 18px;cursor:pointer;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:var(--muted);border-bottom:2px solid transparent;}
+  .tab.active{color:var(--accent);border-bottom:2px solid var(--accent);font-weight:600;}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:20px 22px;margin-bottom:18px;}
+  .card h2{font-size:15px;margin:0 0 14px;font-weight:600;color:var(--accent);font-family:Arial,Helvetica,sans-serif;text-transform:uppercase;letter-spacing:.6px;}
+  label{display:block;font-size:12px;color:var(--muted);margin-bottom:4px;font-family:Arial,Helvetica,sans-serif;}
+  input,select{width:100%;padding:8px 9px;border:1px solid var(--line-strong);border-radius:4px;font-size:14px;background:#fff;color:var(--text);font-family:Arial,Helvetica,sans-serif;}
+  input:focus,select:focus{outline:2px solid var(--accent-bg);border-color:var(--accent);}
+  .grid{display:grid;gap:12px;}
+  .g2{grid-template-columns:repeat(2,1fr);}
+  .g3{grid-template-columns:repeat(3,1fr);}
+  .g4{grid-template-columns:repeat(4,1fr);}
+  .field{margin-bottom:0;}
+  .row{display:flex;gap:10px;align-items:end;flex-wrap:wrap;}
+  button{font-family:Arial,Helvetica,sans-serif;font-size:13px;padding:9px 16px;border-radius:4px;border:1px solid var(--accent);background:var(--accent);color:#fff;cursor:pointer;font-weight:600;}
+  button.secondary{background:#fff;color:var(--accent);}
+  button.danger{background:#fff;color:var(--danger);border-color:var(--danger);}
+  button:hover{opacity:.88;}
+  table{width:100%;border-collapse:collapse;font-family:Arial,Helvetica,sans-serif;font-size:13px;}
+  th,td{padding:8px 7px;text-align:left;border-bottom:1px solid var(--line);}
+  th{color:var(--muted);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.4px;}
+  tr:hover td{background:#FAF8F3;}
+  .amount{font-size:28px;font-weight:700;color:var(--accent);}
+  .badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-family:Arial,Helvetica,sans-serif;background:var(--accent-bg);color:var(--accent);}
+  .empty{color:var(--muted);font-family:Arial,Helvetica,sans-serif;font-size:13px;padding:20px 0;text-align:center;}
+  .small{font-size:11px;color:var(--muted);font-family:Arial,Helvetica,sans-serif;margin-top:4px;}
+  .iconbtn{background:none;border:none;color:var(--danger);cursor:pointer;font-family:Arial,Helvetica,sans-serif;font-size:12px;padding:2px 6px;}
+  .iconbtn:hover{text-decoration:underline;}
+  .totals{display:flex;gap:24px;flex-wrap:wrap;align-items:baseline;border-top:1px solid var(--line);margin-top:14px;padding-top:14px;}
+  .totals div{font-family:Arial,Helvetica,sans-serif;font-size:12px;color:var(--muted);}
+  .totals span{display:block;font-family:Arial,Helvetica,sans-serif;font-size:18px;color:var(--text);font-weight:600;}
+  .toast{position:fixed;bottom:18px;right:18px;background:var(--good);color:#fff;padding:9px 16px;border-radius:5px;font-family:Arial,Helvetica,sans-serif;font-size:13px;opacity:0;transition:opacity .25s;pointer-events:none;}
+  .toast.show{opacity:1;}
+  #printReceipt{display:none;}
+  @media print{
+    body *{visibility:hidden;}
+    #printReceipt, #printReceipt *{visibility:visible;}
+    #printReceipt{display:block;position:absolute;top:0;left:0;width:100%;padding:20px;}
+    #printReceipt table{width:100%;border-collapse:collapse;}
+    #printReceipt td, #printReceipt th{border:1px solid #999;padding:6px 8px;font-size:12px;}
+    #printReceipt tr{page-break-inside:avoid;}
+    /* Each form/DC printed together (e.g. "Print all", client list) starts on its
+       own fresh page instead of running on from the previous one. */
+    #printReceipt .dcPageBreak{page-break-before:always;break-before:page;}
+  }
+</style>
+</head>
+<body>
+<!-- LOGIN SCREEN -->
+<div id="loginScreen" style="display:flex;align-items:center;justify-content:center;min-height:100vh;background:var(--bg);">
+  <div style="background:#fff;border:1px solid var(--line-strong);border-radius:8px;padding:40px 36px;width:340px;box-shadow:0 4px 24px rgba(0,0,0,.08);">
+    <h2 style="font-family:Arial,Helvetica,sans-serif;margin:0 0 6px;font-size:20px;">SJK Workings</h2>
+    <p style="font-family:Arial,sans-serif;font-size:13px;color:var(--muted);margin:0 0 24px;">Sign in to continue</p>
+    <div class="field" style="margin-bottom:12px;"><label>Username</label><input type="text" id="loginUser" autocomplete="username" placeholder="Enter username"></div>
+    <div class="field" style="margin-bottom:18px;"><label>Password</label><input type="password" id="loginPass" autocomplete="current-password" placeholder="Enter password"></div>
+    <button id="loginBtn" style="width:100%;">Sign in</button>
+    <p class="small" id="loginErr" style="color:var(--danger);margin-top:8px;text-align:center;"></p>
+  </div>
+</div>
+
+<div class="wrap" id="mainApp" style="display:none;">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+  <h1 style="margin:0;">SJK Workings</h1>
+  <div style="display:flex;align-items:center;gap:12px;"><span id="syncStatus" style="font-family:Arial,sans-serif;font-size:12px;"></span><span id="loggedInAs" style="font-family:Arial,sans-serif;font-size:13px;color:var(--muted);"></span><button class="secondary" id="logoutBtn" style="padding:6px 12px;font-size:12px;">Logout</button></div>
+  </div>
+  <p class="sub">Casting / Paper casting / Custom orders &mdash; client-wise rates</p>
+  <div id="storageWarningBanner" style="display:none;background:#FDECEA;border:1px solid #E57373;color:#7A1B1B;padding:10px 14px;border-radius:6px;font-family:Arial,sans-serif;font-size:13px;margin-bottom:10px;">
+    ⚠️ <b>This browser is blocking saved data for this file</b> — nothing you enter will be kept after you close or reload the page.
+    This usually happens in private/incognito mode or when the file is opened inside a preview/embedded window. Try opening this file
+    directly in a normal Chrome, Edge, or Firefox tab (not private mode). Until then, use <b>Users tab → Backup &amp; restore → Download backup</b>
+    before closing, so you don't lose today's entries.
+  </div>
+
+  <div class="tabs">
+    <div class="tab active" data-tab="calc">Calculator</div>
+    <div class="tab" data-tab="clients">Client master</div>
+    <div class="tab" data-tab="orders">Saved orders</div>
+    <div class="tab" data-tab="stonetypes">Stone types</div>
+    <div class="tab" data-tab="users">Users</div>
+  </div>
+
+  <!-- CALCULATOR TAB -->
+  <div id="tab-calc">
+    <div class="card">
+      <h2>Order details</h2>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;padding:10px 14px;background:#F3F1EB;border-radius:6px;border:1px solid var(--line);flex-wrap:wrap;">
+        <span class="small" style="margin-right:4px;">Delivery challan</span>
+        <input type="text" id="dcNumberDisplay" value="DC-01" disabled style="width:120px;font-size:16px;font-weight:800;color:#000;padding:5px 8px;background:#F3F1EB;">
+        <span class="small" id="editingDcBadge" style="display:none;color:var(--danger);font-weight:700;">
+          &#9998; Editing an existing bill &mdash; <button type="button" id="exitEditDcBtn" class="iconbtn" style="color:var(--danger);text-decoration:underline;font-weight:700;">return to my new bill</button>
+        </span>
+        <span class="small" id="dcNumberNote" style="margin-left:auto;">Auto-generated only — cannot be typed over. All lines you save below stay on this DC until you click "Save form".</span>
+      </div>
+      <div class="row" style="margin-bottom:14px;padding:12px 14px;background:#F3F1EB;border-radius:6px;border:1px solid var(--accent);align-items:end;">
+        <div class="field" style="max-width:260px;">
+          <label style="font-weight:700;">Step 1 &mdash; Sale type *</label>
+          <select id="saleType">
+            <option value="" selected>Select Sale or Making...</option>
+            <option value="2">Sale</option>
+            <option value="1">Making</option>
+          </select>
+        </div>
+        <div class="field" style="max-width:260px;">
+          <label>Job card / PO number <span style="font-weight:400;">(from client)</span></label>
+          <input type="text" id="jobCardNumber" placeholder="e.g. PO-8823">
+        </div>
+        <div class="field" style="max-width:220px;">
+          <label>Rate for this bill (&#8377;/g, without GST)</label>
+          <input type="number" step="0.01" id="bulkRate" placeholder="e.g. 10250" disabled>
+        </div>
+        <button type="button" class="secondary" id="applyBulkRateBtn">Apply to saved lines</button>
+        <p class="small" id="saleTypeLockNote" style="flex-basis:100%;margin-top:6px;">Choose Sale or Making first &mdash; it locks for this whole bill and cannot be changed once set. The rate is set once here for the whole bill, not for every item.</p>
+      </div>
+      <div class="grid g4" style="margin-bottom:12px;">
+        <div class="field">
+          <label>Client</label>
+          <div style="display:flex;gap:6px;">
+            <input type="text" id="clientInput" list="clientsDatalist" placeholder="Type client name..." autocomplete="off" style="flex:1;">
+            <datalist id="clientsDatalist"></datalist>
+            <button type="button" id="addClientQuickBtn" class="secondary" style="white-space:nowrap;">+ Add</button>
+          </div>
+          <p class="small" id="clientMatchNote"></p>
+        </div>
+        <div class="field" id="branchField" style="display:none;">
+          <label>Branch</label>
+          <select id="branchSelect"></select>
+        </div>
+        <div class="field">
+          <label>Date</label>
+          <input type="date" id="orderDate">
+        </div>
+        <div class="field">
+          <label>S.No</label>
+          <input type="text" id="sno" placeholder="auto" disabled style="background:#F3F1EB;padding-left:6px;padding-right:6px;">
+        </div>
+      </div>
+      <div class="grid" style="margin-bottom:12px;grid-template-columns:1.2fr 1fr 2fr;gap:12px;">
+        <div class="field">
+          <label>Category</label>
+          <select id="category">
+            <option value="">Select category...</option>
+            <option value="Casting">1 - Casting</option>
+            <option value="Paper Casting">2 - Paper casting</option>
+            <option value="Custom Orders">3 - Custom orders</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Sub category</label>
+          <select id="subCategory">
+            <option value="">Select...</option>
+            <option value="Plain">Plain</option>
+            <option value="Stone">Stone</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Particulars *</label>
+          <input type="text" id="particulars" list="particularsDatalist" placeholder="e.g. Ladies Rings" autocomplete="off" onblur="this.value=titleCase(this.value.trim())">
+          <datalist id="particularsDatalist"></datalist>
+        </div>
+      </div>
+      <div class="grid g4" id="stoneTypeRow" style="margin-bottom:12px;">
+        <div class="field" id="stoneTypeField" style="display:none;">
+          <label>Stone type</label>
+          <select id="stoneTypeSelect"><option value="">Select stone type...</option></select>
+        </div>
+        <div class="field">
+          <label>Melting %</label>
+          <input type="number" step="0.01" id="melting" value="92">
+        </div>
+      </div>
+      <div id="orderChargesWrap"></div>
+    </div>
+
+    <div class="card">
+      <h2>Weights and rates</h2>
+      <div class="grid g4" style="margin-bottom:12px;">
+        <div class="field"><label>Order number</label><input type="text" id="orderNumber" placeholder="e.g. ORD-1042"></div>
+        <div class="field"><label>Pcs</label><input type="number" step="1" id="pcs" value="1"></div>
+        <div class="field"><label>Gr.wt (g)</label><input type="number" step="0.001" id="grwt" value="0"></div>
+        <div class="field"><label>St.wt (g)</label><input type="number" step="0.001" id="stwt" value="0"></div>
+      </div>
+      <div class="grid g2" style="margin-bottom:12px;">
+        <div class="field"><label>Net.wt / gold wt (g)</label><input type="number" step="0.001" id="netwt" disabled style="background:#F3F1EB;"></div>
+        <div class="field"><label>Wastage touch <span id="makingPctLabel">%</span> &rarr; Wastage wt (g)</label><input type="text" id="makingWtDisplay" disabled style="background:#F3F1EB;"></div>
+      </div>
+      <div class="grid g4">
+        <div class="field"><label>Total touch % (from client master)</label><input type="number" step="0.01" id="totalTouch" value="0" disabled style="background:#F3F1EB;"></div>
+        <div class="field" style="display:none;"><label>Rate/gram &mdash; without GST (&#8377;)</label><input type="number" step="0.01" id="rate" value="0"></div>
+        <div class="field" style="display:none;"><label>Rate/gram &mdash; with GST 3% (&#8377;)</label><input type="number" step="0.01" id="rateWithGst" value="0"></div>
+      </div>
+      <div class="row" style="margin:16px 0 4px;">
+        <button id="saveOrderBtn" title="Alt+S">Save <span style="opacity:.75;font-weight:400;font-size:11px;">(Alt+S)</span></button>
+        <button class="secondary" id="saveFormBtn" type="button" title="Alt+P">Save form <span style="opacity:.75;font-weight:400;font-size:11px;">(Alt+P)</span></button>
+        <button class="secondary" id="newFormBtn" type="button" title="Alt+N">+ New form <span style="opacity:.75;font-weight:400;font-size:11px;">(Alt+N)</span></button>
+        <button class="secondary" id="clearOrderBtn" type="button" title="Alt+R">Clear form <span style="opacity:.75;font-weight:400;font-size:11px;">(Alt+R)</span></button>
+      </div>
+      <div class="grid g4" style="margin-top:16px;">
+        <div class="field"><label>St.cost rate (&#8377;/g or &#8377;/pc)</label><input type="number" step="0.01" id="stRatePerGram" value="0"></div>
+      </div>
+      <div class="grid g3" style="margin-top:12px;">
+        <div class="field">
+          <label>Other charges
+            <select id="otherChargesType" style="margin-left:6px;width:auto;padding:2px 6px;font-size:12px;">
+              <option value="flat">Flat amount (&#8377;)</option>
+              <option value="pergram">Per gram (&#8377;/g)</option>
+            </select>
+          </label>
+          <input type="number" step="0.01" id="otherCharges" value="0">
+          <p class="small" id="otherChargesCalc"></p>
+          <p class="small">Recorded for your records only &mdash; not shown on the printed bill.</p>
+        </div>
+        <div class="field"><label>St.cost total (&#8377;)</label><input type="number" step="0.01" id="stcost" disabled style="background:#F3F1EB;"></div>
+      </div>
+      <p class="small" id="presetNote"></p>
+    </div>
+
+    <div class="card" style="display:none;">
+      <h2>Amount</h2>
+      <div class="totals">
+        <div>Net.wt / gold wt<span id="outNetwt">0.000 g</span></div>
+        <div>Wastage touch % (<span id="outMeltUsedPct">0</span>%) &rarr; Wastage wt<span id="outMeltUsedWt">0.000 g</span></div>
+        <div>Gold amount<span id="outMetalVal">&#8377;0.00</span></div>
+        <div>St.cost<span id="outStCost">&#8377;0.00</span></div>
+        <div>GST on gold<span id="outGstGold">&#8377;0.00</span></div>
+        <div>GST on stone<span id="outGstStone">&#8377;0.00</span></div>
+        <div>Other charges<span id="outOther">&#8377;0.00</span></div>
+      </div>
+      <p class="small" id="makingNote" style="margin-top:8px;"></p>
+      <div style="margin-top:16px;">
+        <div class="small">Total amount</div>
+        <div class="amount" id="outAmount">&#8377;0.00</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Current bill &mdash; lines added so far <span id="currentBillDcLabel" style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--muted);"></span></h2>
+      <p class="small" style="margin-bottom:10px;">Everything saved on this DC so far, for verification &mdash; check nothing is missing before you print. Click Edit to change a line or add more products; adding a new product opens the same DC below.</p>
+      <div id="currentBillLinesWrap"><p class="empty">No lines added yet for this bill.</p></div>
+      <div class="totals" id="currentBillTotals" style="display:none;">
+        <div>Lines<span id="currentBillCount">0</span></div>
+        <div>Bill total (before custom charges)<span id="currentBillTotal">&#8377;0.00</span></div>
+      </div>
+      <div class="row" style="margin-top:14px;padding-top:12px;border-top:1px solid var(--line);align-items:center;">
+        <button type="button" class="secondary" id="prevFormBtn">&larr; Previous form</button>
+        <span class="small" id="formNavLabel" style="margin:0 4px;"></span>
+        <button type="button" class="secondary" id="nextFormBtn">Next form &rarr;</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- STONE TYPES TAB -->
+  <div id="tab-stonetypes" style="display:none;">
+    <div class="card">
+      <h2>Common particulars <span style="font-weight:400;font-size:12px;color:var(--muted);">(pre-fill standard item names so they auto-suggest while typing — synced to every system)</span></h2>
+      <p class="small" style="margin-bottom:10px;">Add your standard item names here once (e.g. Ladies Rings, Gents Chain, Bangle Set). They're automatically shown in proper case and will suggest as you type in the Particulars box on the Calculator tab, on every computer.</p>
+      <div class="row" style="margin-bottom:10px;">
+        <input type="text" id="commonParticularInput" placeholder="e.g. ladies rings" style="flex:1;">
+        <button type="button" class="secondary" id="addCommonParticularBtn">+ Add</button>
+      </div>
+      <div id="commonParticularsWrap"><p class="empty">No particulars pre-filled yet.</p></div>
+    </div>
+    <div class="card">
+      <h2>Add stone type</h2>
+      <div class="grid g2" style="margin-bottom:12px;">
+        <div class="field"><label>Stone type name</label><input type="text" id="stoneTypeName" placeholder="e.g. Diamond belt"></div>
+        <div class="field"><label>Charge method</label>
+          <select id="stoneTypeChargeMethod">
+            <option value="pergram">Per gram (St.wt &times; rate)</option>
+            <option value="perpcs">Per piece (Pcs &times; rate)</option>
+          </select>
+        </div>
+      </div>
+      <div class="row"><button id="saveStoneTypeBtn">Add stone type</button></div>
+    </div>
+    <div class="card">
+      <h2>All stone types</h2>
+      <div id="stoneTypesTableWrap"><p class="empty">No stone types yet.</p></div>
+    </div>
+  </div>
+
+  <!-- USERS TAB -->
+  <div id="tab-users" style="display:none;">
+    <div class="card">
+      <h2>Backup &amp; restore <span style="font-weight:400;font-size:12px;color:var(--muted);">(carry your data over whenever you get a new/updated copy of this file)</span></h2>
+      <p class="small" style="margin-bottom:10px;">
+        This app saves everything inside your browser, tied to this exact file. If you ever open a different copy of this file
+        (a new download, a new version sent to you, a different computer), that copy starts empty — your data doesn't automatically
+        follow it. To move everything over: click <b>Download backup</b> here first, then open the new file and use
+        <b>Restore from backup</b> to load it back in.
+      </p>
+      <div class="row">
+        <button id="downloadBackupBtn" type="button">Download backup</button>
+        <button class="secondary" id="restoreBackupBtn" type="button">Restore from backup</button>
+        <input type="file" id="restoreBackupInput" accept="application/json" style="display:none;">
+      </div>
+      <p class="small" id="backupNote" style="margin-top:8px;"></p>
+    </div>
+    <div class="card">
+      <h2>DC numbering <span style="font-weight:400;font-size:12px;color:var(--muted);">(admin only)</span></h2>
+      <p class="small" style="margin-bottom:10px;" id="dcCounterStatus"></p>
+      <div class="row">
+        <button class="secondary" id="resetDcCounterBtn" type="button">Reset numbering to DC-01</button>
+        <button class="danger" id="wipeOrdersBtn" type="button">Clear ALL saved orders &amp; reset to DC-01</button>
+      </div>
+      <p class="small" style="margin-top:8px;">
+        <b>Reset numbering</b> just moves the "next number to hand out" back to DC-01 — any orders already saved keep their
+        existing DC numbers, so if any of DC-01, DC-02, etc. are still in use, the next new form will skip past them automatically.<br>
+        <b>Clear ALL saved orders</b> permanently deletes every saved order/line in this app (client master is untouched) and
+        then starts numbering at DC-01 &mdash; use this only if you want a completely clean slate. This cannot be undone; download
+        a backup first if unsure.
+      </p>
+    </div>
+    <div class="card">
+      <h2>Company details <span style="font-weight:400;font-size:12px;color:var(--muted);">(shown at the top of every print)</span></h2>
+      <div class="grid g2" style="margin-bottom:12px;">
+        <div class="field"><label>Company name</label><input type="text" id="companyName" placeholder="e.g. SHOBHA JEWELL KRAFTS"></div>
+        <div class="field">
+          <label>Company logo <span style="font-weight:400;">(shown top-left of every printed form)</span></label>
+          <input type="file" id="companyLogoInput" accept="image/*">
+        </div>
+      </div>
+      <div id="companyLogoPreviewWrap" style="display:none;margin-bottom:12px;">
+        <img id="companyLogoPreview" style="height:260px;width:auto;max-width:750px;object-fit:contain;border:1px solid var(--line-strong);border-radius:4px;padding:4px;background:#fff;">
+        <button type="button" class="iconbtn danger" id="removeLogoBtn" style="margin-left:10px;">Remove logo</button>
+      </div>
+      <div class="row">
+        <button id="saveCompanyBtn">Save</button>
+      </div>
+    </div>
+    <div class="card">
+      <h2>Create / manage users</h2>
+      <div class="grid g3" style="margin-bottom:12px;">
+        <div class="field"><label>Username</label><input type="text" id="newUsername" placeholder="e.g. ravi_sales"></div>
+        <div class="field"><label>Password</label><input type="password" id="newPassword" placeholder="Set password"></div>
+        <div class="field"><label>Role</label>
+          <select id="newRole">
+            <option value="user">User (view + add orders)</option>
+            <option value="admin">Admin (full access)</option>
+          </select>
+        </div>
+      </div>
+      <div class="row">
+        <button id="saveUserBtn">Save user</button>
+        <button class="secondary" id="clearUserBtn" type="button">Clear</button>
+      </div>
+    </div>
+    <div class="card">
+      <h2>All users</h2>
+      <div id="usersTableWrap"><p class="empty">No users yet.</p></div>
+      <p class="small" style="margin-top:10px;">Default admin: username <b>admin</b> / password <b>admin123</b> — change after first login.</p>
+    </div>
+    <div class="card">
+      <h2>Change my password</h2>
+      <div class="grid g3" style="margin-bottom:12px;">
+        <div class="field"><label>Current password</label><input type="password" id="chgOld"></div>
+        <div class="field"><label>New password</label><input type="password" id="chgNew"></div>
+        <div class="field"><label>Confirm new password</label><input type="password" id="chgConfirm"></div>
+      </div>
+      <div class="row"><button id="chgPassBtn">Change password</button></div>
+    </div>
+  </div>
+
+  <!-- CLIENTS TAB -->
+  <div id="tab-clients" style="display:none;">
+    <div class="card">
+      <h2>Add / edit client</h2>
+      <div class="grid g3" style="margin-bottom:12px;">
+        <div class="field"><label>Name</label><input type="text" id="cName" placeholder="e.g. Joy Alukkas"></div>
+        <div class="field"><label>Phone number</label><input type="text" id="cPhone" placeholder="10 digit number"></div>
+        <div class="field"><label>GST</label><input type="text" id="cGst" placeholder="GST number"></div>
+      </div>
+      <div class="grid g2" style="margin-bottom:12px;">
+        <div class="field"><label>Incharge name</label><input type="text" id="cIncharge1" placeholder="e.g. Ramesh"></div>
+        <div class="field"><label>Incharge name 2 <span style="font-weight:400;">(optional)</span></label><input type="text" id="cIncharge2" placeholder="e.g. Suresh"></div>
+      </div>
+      <div class="grid g2" style="margin-bottom:12px;">
+        <div class="field">
+          <label>Melting used <span style="font-weight:400;">(for Making sales &mdash; making % = order touch % &minus; this)</span></label>
+          <select id="cMeltingUsed">
+            <option value="91.6">91.6</option>
+            <option value="92">92</option>
+          </select>
+        </div>
+      </div>
+      <h2 style="margin-top:18px;">Branches / locations <span style="font-weight:400;font-size:12px;color:var(--muted);">(add each location this client has — e.g. Coimbatore, Chennai. If it has more than one, you'll pick the branch while filling an order.)</span></h2>
+      <div class="row" style="margin-bottom:10px;">
+        <input type="text" id="cBranchInput" placeholder="e.g. Coimbatore" style="flex:1;">
+        <button type="button" class="secondary" id="addBranchBtn">+ Add branch</button>
+      </div>
+      <div id="cBranchesWrap" style="margin-bottom:6px;"><p class="small">No branches added — add at least one location above.</p></div>
+      <h2 style="margin-top:18px;">Preset touch % by category and sub category</h2>
+      <div class="grid g2" style="margin-bottom:10px;">
+        <div class="field"><label>Casting &mdash; Plain touch %</label><input type="number" step="0.01" id="pCastingPlain" value="0"></div>
+        <div class="field"><label>Casting &mdash; Stone touch %</label><input type="number" step="0.01" id="pCastingStone" value="0"></div>
+      </div>
+      <div class="grid g2" style="margin-bottom:10px;">
+        <div class="field"><label>Paper casting &mdash; Plain touch %</label><input type="number" step="0.01" id="pPaperPlain" value="0"></div>
+        <div class="field"><label>Paper casting &mdash; Stone touch %</label><input type="number" step="0.01" id="pPaperStone" value="0"></div>
+      </div>
+      <div class="grid g2">
+        <div class="field"><label>Custom orders &mdash; Plain touch %</label><input type="number" step="0.01" id="pCustomPlain" value="0"></div>
+        <div class="field"><label>Custom orders &mdash; Stone touch %</label><input type="number" step="0.01" id="pCustomStone" value="0"></div>
+      </div>
+
+      <h2 style="margin-top:18px;">Stone rates per type <span style="font-weight:400;font-size:12px;color:var(--muted);">(rate is per gram or per piece depending on stone type)</span></h2>
+      <div id="clientStoneRatesWrap"><p class="small">Save stone types first, then they will appear here.</p></div>
+      <h2 style="margin-top:18px;">Custom charges <span style="font-weight:400;font-size:12px;color:var(--muted);">(added to bill total — e.g. HUID, Hallmarking)</span></h2>
+      <div id="customChargesWrap"></div>
+      <button type="button" class="secondary" id="addChargeBtn" style="margin-top:8px;">+ Add charge</button>
+      <div class="row" style="margin-top:18px;">
+        <button id="saveClientBtn">Save client</button>
+        <button class="secondary" id="clearClientBtn" type="button">Clear form</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="row" style="justify-content:space-between;align-items:center;">
+        <h2 style="margin:0;">Clients</h2>
+        <button class="secondary" id="printClientsBtn" type="button">Print client list</button>
+      </div>
+      <p class="small" style="margin-top:4px;">Prints a clean, full-page list of every client for your records — just names, contacts and locations, no edit buttons.</p>
+      <div id="clientsTableWrap" style="margin-top:10px;"><p class="empty">No clients saved yet.</p></div>
+    </div>
+  </div>
+
+  <!-- ORDERS TAB -->
+  <div id="tab-orders" style="display:none;">
+    <div class="card">
+      <div class="row" style="justify-content:space-between;align-items:center;">
+        <h2 style="margin:0;">Saved orders</h2>
+        <div class="row" style="gap:8px;">
+          <button class="secondary" id="combineDcBtn" type="button">Combine selected &amp; print</button>
+          <button class="secondary" id="printAllOrdersBtn" type="button">Print all (one form per DC)</button>
+        </div>
+      </div>
+      <p class="small" style="margin-top:4px;">Each row's "Print form" button reprints that entire DC as one form, not just this single line. Tick two or more rows' checkboxes and click <b>Combine selected &amp; print</b> to merge them into a single bill (a Branch/City column is added and lines are grouped city-wise).</p>
+      <div id="ordersTableWrap" style="margin-top:10px;"><p class="empty">No orders saved yet.</p></div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<div id="printReceipt"></div>
+
+<script>
+// ── CLOUD SYNC CONFIGURATION (Firebase Firestore) ───────────────────
+// Fill these two values in ONCE, then copy this exact file to every computer
+// in the office — every copy will read/write the same shared data (clients,
+// orders, particulars, stone types, users, DC numbers — everything), live.
+//
+// How to get the two values (about 5 minutes, free, no coding needed):
+//  1. Go to https://console.firebase.google.com -> "Add project" -> any name
+//     (e.g. "sjk-workings") -> finish the wizard (defaults are fine).
+//  2. Left menu -> "Firestore Database" -> "Create database" -> "Start in
+//     test mode" -> pick any region -> Enable.
+//  3. Left menu -> gear icon -> "Project settings" -> scroll to "Your apps"
+//     -> click the </> (Web) icon -> register an app (any nickname, skip
+//     hosting) -> it shows a firebaseConfig block. Copy "projectId" and
+//     "apiKey" from there into the two constants below.
+//  4. Firestore Database -> "Rules" tab -> paste:
+//       rules_version = '2';
+//       service cloud.firestore {
+//         match /databases/{database}/documents {
+//           match /kv/{doc} { allow read, write: if true; }
+//         }
+//       }
+//     -> Publish. (Kept open on purpose for simplicity — anyone with this
+//     file could read/write your data, so don't share it outside the
+//     office. Ask if you'd like it locked down with a password/App Check.)
+//  5. Save this file and copy it to every system that should share data.
+//     Nothing else needs to be done on the other computers.
+const FIREBASE_PROJECT_ID = '';   // e.g. 'sjk-workings-a1b2c'
+const FIREBASE_API_KEY    = '';   // e.g. 'AIzaSyD..................'
+const SYNC_ENABLED = !!(FIREBASE_PROJECT_ID && FIREBASE_API_KEY);
+const FIRESTORE_BASE = SYNC_ENABLED
+  ? `https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT_ID}/databases/(default)/documents/kv`
+  : '';
+let lastCloudSyncOk = !SYNC_ENABLED; // true once we've confirmed the cloud is reachable
+
+// ── STORAGE (cloud-synced when configured above, local-only otherwise) ──
+// Same get/set/delete/list interface either way. Every write also updates
+// localStorage as an offline cache, so the app keeps working instantly and
+// survives a brief network drop; it just re-syncs on the next successful call.
+window.storage = {
+  async get(key, shared){
+    if(SYNC_ENABLED){
+      try{
+        const res = await fetch(`${FIRESTORE_BASE}/${encodeURIComponent(key)}?key=${FIREBASE_API_KEY}`);
+        if(res.status === 404){
+          const raw = localStorage.getItem(key);
+          lastCloudSyncOk = true;
+          return raw===null ? null : {key, value: raw, shared: !!shared};
+        }
+        if(!res.ok) throw new Error('Firestore GET failed: '+res.status);
+        const doc = await res.json();
+        const val = (doc.fields && doc.fields.v) ? doc.fields.v.stringValue : null;
+        lastCloudSyncOk = true;
+        if(val !== null){ try{ localStorage.setItem(key, val); }catch(e){} }
+        return val===null ? null : {key, value: val, shared: !!shared};
+      }catch(e){
+        console.error('cloud get failed, using local cache', e);
+        lastCloudSyncOk = false;
+        const raw = localStorage.getItem(key);
+        return raw===null ? null : {key, value: raw, shared: !!shared};
+      }
+    }
+    try{
+      const raw = localStorage.getItem(key);
+      return raw===null ? null : {key, value: raw, shared: !!shared};
+    }catch(e){ return null; }
+  },
+  async set(key, value, shared){
+    try{ localStorage.setItem(key, value); }catch(e){ /* quota etc — ignore */ }
+    if(SYNC_ENABLED){
+      try{
+        const res = await fetch(`${FIRESTORE_BASE}/${encodeURIComponent(key)}?key=${FIREBASE_API_KEY}`, {
+          method:'PATCH',
+          headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({fields:{v:{stringValue:String(value)}}})
+        });
+        if(!res.ok) throw new Error('Firestore PATCH failed: '+res.status);
+        lastCloudSyncOk = true;
+      }catch(e){
+        console.error('cloud save failed — kept locally only, will not appear on other systems yet', e);
+        lastCloudSyncOk = false;
+        return null;
+      }
+    }
+    return {key, value, shared: !!shared};
+  },
+  async delete(key, shared){
+    try{ localStorage.removeItem(key); }catch(e){}
+    if(SYNC_ENABLED){
+      try{
+        const res = await fetch(`${FIRESTORE_BASE}/${encodeURIComponent(key)}?key=${FIREBASE_API_KEY}`, {method:'DELETE'});
+        if(!res.ok && res.status!==404) throw new Error('Firestore DELETE failed: '+res.status);
+        lastCloudSyncOk = true;
+      }catch(e){ console.error('cloud delete failed', e); lastCloudSyncOk = false; return null; }
+    }
+    return {key, deleted:true, shared: !!shared};
+  },
+  async list(prefix, shared){
+    try{
+      const keys = Object.keys(localStorage).filter(k => !prefix || k.startsWith(prefix));
+      return {keys, prefix, shared: !!shared};
+    }catch(e){ return null; }
+  }
+};
+// One-time check: is this browser actually letting us write to localStorage at all
+// (private/incognito mode, embedded preview frames, and some mobile browsers can
+// block it entirely for local files)? If so, nothing will ever save, and the person
+// needs to know clearly and immediately rather than discover it via silent failures.
+let storageIsAvailable = true;
+try{
+  const testKey = '__storage_test__' + Date.now();
+  localStorage.setItem(testKey, '1');
+  localStorage.removeItem(testKey);
+}catch(e){ storageIsAvailable = false; }
+// ─────────────────────────────────────────────────────────────────────
+
+let clients = [];
+let orders = [];
+let particularsHistory = [];
+let commonParticulars = []; // pre-filled/pinned standard item names, e.g. "Ladies Rings"
+let editingClientId = null;
+let companyName = 'SHOBHA JEWELL KRAFTS';
+let companyLogo = ''; // base64 data URL of the uploaded logo, printed top-left of every form
+let dcCounter = 0;
+let currentDcNumber = '';
+// Custom charges (e.g. HUID, Hallmarking) are only added to a DC's total if ticked
+// here in the order form — currentDcIncludedCharges holds the ticked charge names
+// for whichever DC is currently open. chargeToggleClientId tracks which client the
+// toggles currently belong to, so the list resets when the client actually changes
+// (not on every keystroke while typing a name).
+let currentDcIncludedCharges = [];
+let chargeToggleClientId = null;
+let editingOrderId = null;
+// Sale type is chosen freely and stays editable until the very first line of
+// a bill is actually SAVED — only then does applySaleTypeLock derive the
+// lock from that saved line's saleType, and the dropdown disables.
+// currentBillSaleType is kept only as bookkeeping for a brand-new/unsaved
+// bill; it no longer drives the lock itself.
+let currentBillSaleType = '';
+// When Edit reopens an older, already-numbered bill, preEditDcNumber remembers
+// the DC that was actually "next up" for brand-new work, so the person can
+// jump back to it with one click instead of the app silently staying stuck on
+// the old bill (which was the source of DC numbers going wrong before).
+let preEditDcNumber = null;
+function formatDc(n){ return 'DC-' + String(n).padStart(2,'0'); }
+// Always hands back a DC number that isn't already used by any saved order —
+// even if dcCounter has drifted (e.g. someone typed a custom DC number by
+// hand), this keeps auto-generated numbers from ever colliding or repeating.
+function nextDcNumber(){
+  let n = dcCounter;
+  let candidate;
+  do{
+    n += 1;
+    candidate = formatDc(n);
+  } while(orders.some(o=>o.dcNumber===candidate));
+  dcCounter = n;
+  return candidate;
+}
+function updateEditingDcBadge(){
+  const badge = $('editingDcBadge');
+  if(badge) badge.style.display = preEditDcNumber ? '' : 'none';
+  const label = $('bulkRateDcLabel');
+  if(label) label.textContent = currentDcNumber || 'this DC';
+}
+// Loads an existing DC's data into the calculator without disturbing the
+// "real" next-new-bill DC number — that gets restored via the "return to my
+// new bill" link, or automatically once this bill is printed/closed.
+function enterDcEditContext(dcNumber){
+  if(dcNumber && dcNumber !== currentDcNumber && preEditDcNumber === null){
+    preEditDcNumber = currentDcNumber;
+  }
+  currentDcNumber = dcNumber || currentDcNumber;
+  currentBillSaleType = ''; // this DC's own saved lines (if any) now drive the lock
+  if($('dcNumberDisplay')) $('dcNumberDisplay').value = currentDcNumber;
+  updateEditingDcBadge();
+}
+if(document.getElementById('exitEditDcBtn')) document.getElementById('exitEditDcBtn').addEventListener('click', async ()=>{
+  if(!preEditDcNumber) return;
+  currentDcNumber = preEditDcNumber;
+  preEditDcNumber = null;
+  if($('dcNumberDisplay')) $('dcNumberDisplay').value = currentDcNumber;
+  try{ await window.storage.set('currentDcNumber', currentDcNumber, true); }catch(err){ /* ignore */ }
+  updateEditingDcBadge();
+  clearOrderForm();
+  toast('Back on your new bill — '+currentDcNumber);
+});
+// DC numbers are automated for everyone by default. Admins are the one
+// exception — they can type their own DC number over the auto-generated one
+// (e.g. to correct a sequence or start over at DC-01) — see
+// updateDcFieldEditability() and the input listener below, both gated on
+// currentUser.role === 'admin'.
+function updateDcFieldEditability(){
+  const el = $('dcNumberDisplay');
+  const note = $('dcNumberNote');
+  if(!el) return;
+  const isAdmin = currentUser && currentUser.role === 'admin';
+  el.disabled = !isAdmin;
+  el.style.background = isAdmin ? '#fff' : '#F3F1EB';
+  if(note){
+    note.textContent = isAdmin
+      ? 'Auto-generated — as admin, you can type your own DC number over it if needed. The next one after "Save form"/"+ New form" still comes automatically. All lines you save below stay on this DC until you move to a new form.'
+      : 'Auto-generated only — cannot be typed over. All lines you save below stay on this DC until you click "Save form" or "+ New form".';
+  }
+}
+if(document.getElementById('dcNumberDisplay')) document.getElementById('dcNumberDisplay').addEventListener('input', async (e)=>{
+  if(!currentUser || currentUser.role !== 'admin') return; // safety net; field is disabled anyway for non-admins
+  currentDcNumber = e.target.value.trim();
+  // Keep the auto-counter in sync so future auto-generated numbers never step
+  // backward over (or collide with) a DC number typed in by an admin.
+  const m = /^DC-(\d+)$/i.exec(currentDcNumber);
+  if(m){ const n = parseInt(m[1],10); if(n > dcCounter) dcCounter = n; }
+  try{ await window.storage.set('currentDcNumber', currentDcNumber, true); }catch(err){ /* ignore */ }
+  updateEditingDcBadge();
+});
+
+const $ = (id) => document.getElementById(id);
+function toast(msg){
+  const t = $('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 1800);
+}
+function fmt(n){ return (Math.round((n+Number.EPSILON)*100)/100).toFixed(2); }
+// Rounds to the nearest paisa (2 decimals) as a NUMBER (not a string) — used
+// so GST is always calculated on the amount actually arrived at (e.g. ₹1970),
+// not on an unrounded intermediate value.
+function round2(n){ return Math.round((n+Number.EPSILON)*100)/100; }
+function fmtWt(n){ return (Math.round((n+Number.EPSILON)*1000)/1000).toFixed(3); }
+function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
+// Converts free-typed text into proper "Title Case" (e.g. "LADIES rings" or
+// "ladies rings" -> "Ladies Rings"), so particulars always look consistent
+// regardless of how a staff member happened to type it. Keeps existing
+// internal capitals in things like "22K" or acronyms with mixed digits/letters
+// unchanged where they already contain a digit or are 3+ caps (unlikely to be
+// a normal word), everything else gets Capitalized First Letter.
+function titleCase(str){
+  if(!str) return str;
+  const small = new Set(['of','and','the','for','a','an','in','on']);
+  return str.toLowerCase().split(' ').map((word, i)=>{
+    if(!word) return word;
+    if(small.has(word) && i!==0) return word;
+    return word.charAt(0).toUpperCase() + word.slice(1);
+  }).join(' ');
+}
+
+async function loadData(){
+  try{
+    const c = await window.storage.get('clients', true);
+    clients = c ? JSON.parse(c.value) : [];
+  }catch(e){ clients = []; }
+  // migrate legacy single-"city" clients to the new branches[] list
+  let migrated = false;
+  clients.forEach(c=>{
+    if(!Array.isArray(c.branches) || !c.branches.length){
+      c.branches = c.city ? [c.city] : [];
+      migrated = true;
+    }
+  });
+  if(migrated) saveClients();
+  try{
+    const o = await window.storage.get('orders', true);
+    orders = o ? JSON.parse(o.value) : [];
+  }catch(e){ orders = []; }
+  try{
+    const p = await window.storage.get('particularsHistory', true);
+    particularsHistory = p ? JSON.parse(p.value) : [];
+  }catch(e){ particularsHistory = []; }
+  try{
+    const cp = await window.storage.get('commonParticulars', true);
+    commonParticulars = cp ? JSON.parse(cp.value) : [];
+  }catch(e){ commonParticulars = []; }
+  renderCommonParticularsList();
+  try{
+    const cn = await window.storage.get('companyName', true);
+    if(cn && cn.value) companyName = cn.value;
+  }catch(e){ /* keep default */ }
+  if($('companyName')) $('companyName').value = companyName;
+  try{
+    const cl = await window.storage.get('companyLogo', true);
+    if(cl && cl.value) companyLogo = cl.value;
+  }catch(e){ /* no logo yet */ }
+  showLogoPreview();
+  try{
+    const dc = await window.storage.get('dcCounter', true);
+    dcCounter = dc && dc.value ? (parseInt(dc.value,10)||0) : 0;
+  }catch(e){ dcCounter = 0; }
+  // Self-heal the DC counter: if orders were saved from another computer (or
+  // with a hand-typed DC number) since dcCounter was last stored here, the
+  // counter can drift behind what's actually been used, which is what causes
+  // wrong/repeated DC numbers. Always make sure the counter is at least as
+  // high as the highest DC number that has ever actually been saved.
+  let maxDcUsed = 0;
+  orders.forEach(o=>{
+    const m = /^DC-(\d+)$/i.exec(o.dcNumber||'');
+    if(m){ const n = parseInt(m[1],10); if(n > maxDcUsed) maxDcUsed = n; }
+  });
+  if(maxDcUsed > dcCounter){
+    dcCounter = maxDcUsed;
+    try{ await window.storage.set('dcCounter', String(dcCounter), true); }catch(e){ /* will retry later */ }
+  }
+  try{
+    const cdn = await window.storage.get('currentDcNumber', true);
+    currentDcNumber = cdn && cdn.value ? cdn.value : '';
+  }catch(e){ currentDcNumber = ''; }
+  // On every app open: if the DC number left over from last time already has
+  // at least one saved line under it, it counts as USED — reopening must
+  // NEVER show that number again, so hand out a genuinely fresh, never-used
+  // one instead. Only keep re-showing the leftover number when it is still
+  // completely blank (zero lines) — that's not "used" yet, it's just a
+  // reserved number, so there's no reason to burn it and skip ahead.
+  if(!currentDcNumber){
+    currentDcNumber = nextDcNumber();
+  } else if(orders.some(o=>o.dcNumber===currentDcNumber)){
+    currentDcNumber = nextDcNumber();
+  }
+  try{
+    await window.storage.set('dcCounter', String(dcCounter), true);
+    await window.storage.set('currentDcNumber', currentDcNumber, true);
+  }catch(e){ /* will retry to persist next time a line is saved */ }
+  if($('dcNumberDisplay')) $('dcNumberDisplay').value = currentDcNumber;
+  renderDcCounterStatus();
+  renderClientSelect();
+  renderClientsTable();
+  renderOrdersTable();
+  renderParticularsDatalist();
+  updateEditingDcBadge();
+  refreshCurrentBillPanel();
+}
+async function saveClients(){
+  try{
+    const res = await window.storage.set('clients', JSON.stringify(clients), true);
+    if(!res) throw new Error('storage.set returned null');
+    return true;
+  }catch(e){
+    console.error('client save failed', e);
+    toast('⚠️ Could not save to storage — see the warning banner at the top');
+    return false;
+  }
+}
+async function saveOrders(){
+  try{
+    const res = await window.storage.set('orders', JSON.stringify(orders), true);
+    if(!res) throw new Error('storage.set returned null');
+    return true;
+  }catch(e){
+    console.error('order save failed', e);
+    toast('⚠️ Could not save to storage — see the warning banner at the top');
+    return false;
+  }
+}
+async function saveParticularsHistory(){
+  try{
+    const res = await window.storage.set('particularsHistory', JSON.stringify(particularsHistory), true);
+    if(!res) throw new Error('storage.set returned null');
+    return true;
+  }catch(e){ console.error('particulars history save failed', e); return false; }
+}
+function renderParticularsDatalist(){
+  const merged = [...commonParticulars, ...particularsHistory];
+  const seen = new Set();
+  const unique = merged.filter(p=>{
+    const k = p.toLowerCase();
+    if(seen.has(k)) return false;
+    seen.add(k); return true;
+  });
+  $('particularsDatalist').innerHTML = unique.map(p => `<option value="${escapeHtml(p)}">`).join('');
+}
+function rememberParticulars(value){
+  const v = titleCase(value.trim());
+  if(!v) return;
+  particularsHistory = particularsHistory.filter(p => p.toLowerCase() !== v.toLowerCase());
+  particularsHistory.unshift(v);
+  if(particularsHistory.length > 50) particularsHistory = particularsHistory.slice(0,50);
+  renderParticularsDatalist();
+  saveParticularsHistory();
+}
+async function loadCommonParticulars(){
+  try{
+    const cp = await window.storage.get('commonParticulars', true);
+    commonParticulars = cp ? JSON.parse(cp.value) : [];
+  }catch(e){ commonParticulars = []; }
+  renderCommonParticularsList();
+  renderParticularsDatalist();
+}
+async function saveCommonParticulars(){
+  try{
+    const res = await window.storage.set('commonParticulars', JSON.stringify(commonParticulars), true);
+    if(!res) throw new Error('storage.set returned null');
+    return true;
+  }catch(e){ console.error('common particulars save failed', e); toast('⚠️ Could not save — see the warning banner at the top'); return false; }
+}
+function renderCommonParticularsList(){
+  const wrap = $('commonParticularsWrap');
+  if(!wrap) return;
+  if(!commonParticulars.length){ wrap.innerHTML = '<p class="empty">No particulars pre-filled yet.</p>'; return; }
+  wrap.innerHTML = commonParticulars.map((p,i)=>
+    `<span class="badge" style="margin:0 6px 6px 0;display:inline-flex;align-items:center;gap:6px;">${escapeHtml(p)}
+      <button type="button" class="iconbtn" style="padding:0;font-size:11px;" onclick="deleteCommonParticular(${i})">&times;</button>
+    </span>`
+  ).join('');
+}
+window.deleteCommonParticular = async function(i){
+  commonParticulars.splice(i,1);
+  await saveCommonParticulars();
+  renderCommonParticularsList();
+  renderParticularsDatalist();
+};
+if($('addCommonParticularBtn')) $('addCommonParticularBtn').addEventListener('click', async ()=>{
+  const raw = $('commonParticularInput').value.trim();
+  if(!raw){ toast('Type a particulars name first'); return; }
+  const v = titleCase(raw);
+  if(commonParticulars.find(p=>p.toLowerCase()===v.toLowerCase())){ toast('Already in the list'); $('commonParticularInput').value=''; return; }
+  commonParticulars.push(v);
+  await saveCommonParticulars();
+  $('commonParticularInput').value = '';
+  renderCommonParticularsList();
+  renderParticularsDatalist();
+  toast('Added — will suggest while typing on every system');
+});
+if($('commonParticularInput')) $('commonParticularInput').addEventListener('keydown', e=>{
+  if(e.key==='Enter'){ e.preventDefault(); $('addCommonParticularBtn').click(); }
+});
+
+// ---- tabs ----
+document.querySelectorAll('.tab').forEach(t=>{
+  t.addEventListener('click', ()=>{
+    document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+    t.classList.add('active');
+    ['calc','clients','orders','users','stonetypes'].forEach(name=>{
+      $('tab-'+name).style.display = (name === t.dataset.tab) ? 'block' : 'none';
+    });
+    if(t.dataset.tab === 'users') renderUsersTable();
+  });
+});
+
+// ---- client form ----
+function renderClientSelect(){
+  const dl = $('clientsDatalist');
+  dl.innerHTML = clients.map(c => `<option value="${escapeHtml(c.name)}">`).join('');
+}
+function findClientByName(name){
+  const n = (name||'').trim().toLowerCase();
+  if(!n) return null;
+  return clients.find(c => c.name.trim().toLowerCase() === n) || null;
+}
+function escapeHtml(s){
+  return (s||'').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+}
+function renderClientsTable(){
+  const wrap = $('clientsTableWrap');
+  if(!clients.length){ wrap.innerHTML = '<p class="empty">No clients saved yet.</p>'; return; }
+  wrap.innerHTML = `<table><thead><tr>
+    <th>Name</th><th>Phone</th><th>Incharge</th><th>Branches</th><th>GST</th><th>Melting used</th>
+    <th>Cast P/S</th><th>Paper P/S</th><th>Custom P/S</th><th>Stone rates</th><th>Custom charges</th><th></th>
+  </tr></thead><tbody>
+  ${clients.map(c => `<tr>
+    <td>${escapeHtml(c.name)}</td>
+    <td>${escapeHtml(c.phone)}</td>
+    <td>${[c.incharge1, c.incharge2].filter(Boolean).map(escapeHtml).join(', ')||'—'}</td>
+    <td>${(c.branches||[]).map(b=>escapeHtml(b)).join(', ')||'—'}</td>
+    <td>${escapeHtml(c.gst)}</td>
+    <td>${c.meltingUsed != null ? c.meltingUsed : 92}</td>
+    <td>${c.touch.Casting.Plain} / ${c.touch.Casting.Stone}</td>
+    <td>${c.touch['Paper Casting'].Plain} / ${c.touch['Paper Casting'].Stone}</td>
+    <td>${c.touch['Custom Orders'].Plain} / ${c.touch['Custom Orders'].Stone}</td>
+    <td>${Object.entries(c.stoneRates||{}).map(([id,r])=>{
+      const st=stoneTypes.find(x=>x.id===id);
+      if(!st) return '';
+      const entry=normalizeStoneRateEntry(r, st);
+      if(!entry.rate) return '';
+      const unit = entry.method==='perpcs' ? '/pc' : '/g';
+      return escapeHtml(st.name)+': ₹'+fmt(entry.rate)+unit;
+    }).filter(Boolean).join(', ')||'—'}</td>
+    <td>${(c.customCharges||[]).map(ch=>`${escapeHtml(ch.name)} (${ch.type==='perpcs'?'₹'+ch.rate+'/pc':ch.type==='pergram'?'₹'+ch.rate+'/g':'₹'+ch.rate+' flat'})`).join(', ')||'—'}</td>
+    <td><button class="iconbtn" onclick="editClient('${c.id}')">Edit</button>
+        <button class="iconbtn" onclick="deleteClient('${c.id}')">Delete</button></td>
+  </tr>`).join('')}
+  </tbody></table>`;
+}
+window.editClient = function(id){
+  const c = clients.find(x=>x.id===id);
+  if(!c) return;
+  editingClientId = id;
+  $('cName').value = c.name; $('cPhone').value = c.phone; $('cGst').value = c.gst;
+  $('cIncharge1').value = c.incharge1 || ''; $('cIncharge2').value = c.incharge2 || '';
+  $('cMeltingUsed').value = (c.meltingUsed != null ? String(c.meltingUsed) : '92');
+  $('pCastingPlain').value = c.touch.Casting.Plain; $('pCastingStone').value = c.touch.Casting.Stone;
+  $('pPaperPlain').value = c.touch['Paper Casting'].Plain; $('pPaperStone').value = c.touch['Paper Casting'].Stone;
+  $('pCustomPlain').value = c.touch['Custom Orders'].Plain; $('pCustomStone').value = c.touch['Custom Orders'].Stone;
+  renderClientBranches(c.branches||[]);
+  renderClientStoneRates(c.stoneRates||{});
+  renderCustomChargesForm(c.customCharges||[]);
+  document.querySelector('[data-tab="clients"]').click();
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+window.deleteClient = async function(id){
+  clients = clients.filter(x=>x.id!==id);
+  await saveClients();
+  renderClientSelect(); renderClientsTable();
+  toast('Client deleted');
+}
+
+// ---- client branches form ----
+let clientBranchesLocal = [];
+function renderClientBranches(branches){
+  clientBranchesLocal = branches ? [...branches] : [];
+  refreshClientBranchesUI();
+}
+function refreshClientBranchesUI(){
+  const wrap = $('cBranchesWrap');
+  if(!clientBranchesLocal.length){ wrap.innerHTML = '<p class="small">No branches added — add at least one location above.</p>'; return; }
+  wrap.innerHTML = clientBranchesLocal.map((b,i)=>`
+    <span class="badge" style="margin:0 6px 6px 0;display:inline-flex;align-items:center;gap:6px;">
+      ${escapeHtml(b)}
+      <button type="button" class="iconbtn" style="padding:0;font-size:13px;" onclick="removeClientBranch(${i})">&times;</button>
+    </span>`).join('');
+}
+window.removeClientBranch = function(i){
+  clientBranchesLocal.splice(i,1);
+  refreshClientBranchesUI();
+}
+$('addBranchBtn').addEventListener('click', ()=>{
+  const v = $('cBranchInput').value.trim();
+  if(!v){ toast('Enter a branch name'); return; }
+  if(clientBranchesLocal.some(b=>b.toLowerCase()===v.toLowerCase())){ toast('Branch already added'); return; }
+  clientBranchesLocal.push(v);
+  $('cBranchInput').value='';
+  refreshClientBranchesUI();
+});
+$('cBranchInput').addEventListener('keydown', e=>{
+  if(e.key==='Enter'){ e.preventDefault(); $('addBranchBtn').click(); }
+});
+function readClientBranches(){
+  return [...clientBranchesLocal];
+}
+
+// ---- custom charges form ----
+let customChargesLocal = [];
+function renderCustomChargesForm(charges){
+  customChargesLocal = charges ? JSON.parse(JSON.stringify(charges)) : [];
+  refreshCustomChargesUI();
+}
+function refreshCustomChargesUI(){
+  const wrap = $('customChargesWrap');
+  if(!customChargesLocal.length){ wrap.innerHTML = '<p class="small" style="margin:4px 0;">No custom charges yet.</p>'; return; }
+  wrap.innerHTML = customChargesLocal.map((ch, i) => `
+    <div class="grid g3" style="margin-bottom:8px;align-items:end;">
+      <div class="field">
+        <label>Charge name</label>
+        <input type="text" value="${escapeHtml(ch.name)}" oninput="customChargesLocal[${i}].name=this.value" placeholder="e.g. HUID">
+      </div>
+      <div class="field">
+        <label>Type</label>
+        <select onchange="customChargesLocal[${i}].type=this.value">
+          <option value="perpcs" ${ch.type==='perpcs'?'selected':''}>Per piece (Pcs &times; rate)</option>
+          <option value="pergram" ${ch.type==='pergram'?'selected':''}>Per gram (Net.wt &times; rate)</option>
+          <option value="flat" ${ch.type==='flat'?'selected':''}>Flat amount</option>
+        </select>
+      </div>
+      <div class="field" style="display:flex;gap:6px;align-items:end;">
+        <div style="flex:1;">
+          <label>Rate (&#8377;)</label>
+          <input type="number" step="0.01" value="${ch.rate}" oninput="customChargesLocal[${i}].rate=parseFloat(this.value)||0">
+        </div>
+        <button class="iconbtn danger" onclick="removeCustomCharge(${i})">Remove</button>
+      </div>
+    </div>`).join('');
+}
+window.removeCustomCharge = function(i){
+  customChargesLocal.splice(i,1);
+  refreshCustomChargesUI();
+}
+function readCustomChargesForm(){
+  return JSON.parse(JSON.stringify(customChargesLocal));
+}
+$('addChargeBtn').addEventListener('click', ()=>{
+  customChargesLocal.push({name:'', type:'perpcs', rate:0});
+  refreshCustomChargesUI();
+});
+function clearClientForm(){
+  editingClientId = null;
+  ['cName','cPhone','cGst','cIncharge1','cIncharge2'].forEach(id=>$(id).value='');
+  $('cMeltingUsed').value = '92';
+  $('cBranchInput').value='';
+  ['pCastingPlain','pCastingStone','pPaperPlain','pPaperStone','pCustomPlain','pCustomStone'].forEach(id=>$(id).value='0');
+  renderClientBranches([]);
+  renderClientStoneRates({});
+  renderCustomChargesForm([]);
+}
+$('clearClientBtn').addEventListener('click', clearClientForm);
+$('saveClientBtn').addEventListener('click', async ()=>{
+  const name = $('cName').value.trim();
+  if(!name){ toast('Client name is required'); return; }
+  const data = {
+    id: editingClientId || uid(),
+    name,
+    phone: $('cPhone').value.trim(),
+    branches: readClientBranches(),
+    gst: $('cGst').value.trim(),
+    incharge1: $('cIncharge1').value.trim(),
+    incharge2: $('cIncharge2').value.trim(),
+    meltingUsed: parseFloat($('cMeltingUsed').value)||92,
+    touch: {
+      'Casting': { Plain: parseFloat($('pCastingPlain').value)||0, Stone: parseFloat($('pCastingStone').value)||0 },
+      'Paper Casting': { Plain: parseFloat($('pPaperPlain').value)||0, Stone: parseFloat($('pPaperStone').value)||0 },
+      'Custom Orders': { Plain: parseFloat($('pCustomPlain').value)||0, Stone: parseFloat($('pCustomStone').value)||0 }
+    },
+    stoneRates: readClientStoneRates(),
+    customCharges: readCustomChargesForm()
+  };
+  if(editingClientId){
+    clients = clients.map(c => c.id===editingClientId ? data : c);
+  } else {
+    clients.push(data);
+  }
+  const ok = await saveClients();
+  renderClientSelect(); renderClientsTable();
+  editingClientId = data.id;
+  if(ok) toast('Client saved');
+  // if it failed, the toast/banner from saveClients() already explains why —
+  // the form is left exactly as-is so nothing typed is lost
+});
+
+// ---- calculator ----
+// Shows a tick-box per custom charge defined for the selected client (e.g. HUID,
+// Hallmarking). A charge is only added to this DC's total if its box is ticked —
+// nothing is billed automatically.
+function renderOrderChargeToggles(client){
+  const wrap = $('orderChargesWrap');
+  if(!wrap) return;
+  const charges = client ? (client.customCharges||[]) : [];
+  if(!charges.length){ wrap.innerHTML = ''; return; }
+  wrap.innerHTML = `<div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--line);">
+    <label style="margin-bottom:6px;">Charges for this order <span style="font-weight:400;">(tick to add — only ticked charges are billed)</span></label>
+    <div style="display:flex;gap:18px;flex-wrap:wrap;">
+      ${charges.map(ch=>{
+        const label = ch.type==='perpcs' ? `${ch.name} (&#8377;${fmt(ch.rate)}/pc)` : ch.type==='pergram' ? `${ch.name} (&#8377;${fmt(ch.rate)}/g)` : `${ch.name} (&#8377;${fmt(ch.rate)} flat)`;
+        const checked = currentDcIncludedCharges.includes(ch.name) ? 'checked' : '';
+        return `<label style="display:flex;align-items:center;gap:6px;font-family:Arial,Helvetica,sans-serif;font-size:13px;font-weight:400;color:var(--text);cursor:pointer;">
+          <input type="checkbox" style="width:auto;" ${checked} onchange="toggleDcCharge('${escapeHtml(ch.name).replace(/'/g,"&#39;")}', this.checked)">
+          ${label}
+        </label>`;
+      }).join('')}
+    </div>
+  </div>`;
+}
+window.toggleDcCharge = function(name, checked){
+  if(checked){ if(!currentDcIncludedCharges.includes(name)) currentDcIncludedCharges.push(name); }
+  else { currentDcIncludedCharges = currentDcIncludedCharges.filter(n=>n!==name); }
+};
+
+function applyClientPreset(){
+  const typedName = $('clientInput').value;
+  const category = $('category').value;
+  const subCategory = $('subCategory').value;
+  const client = findClientByName(typedName);
+  const chargeClientId = client ? client.id : null;
+  if(chargeClientId !== chargeToggleClientId){
+    chargeToggleClientId = chargeClientId;
+    currentDcIncludedCharges = [];
+  }
+  renderOrderChargeToggles(client);
+  if(client && category && subCategory){
+    const touchMap = client.touch[category] || {};
+    $('totalTouch').value = touchMap[subCategory] ?? 0;
+  }
+  if(client){
+    // Melting % is captured from Client master automatically (e.g. 91.6 for
+    // a client whose master record has that set) — same as touch %. It can
+    // still be edited by hand afterwards if a particular order needs it.
+    $('melting').value = (client.meltingUsed != null) ? client.meltingUsed : 92;
+  }
+  if(client && subCategory === 'Stone'){
+    const stoneTypeId = $('stoneTypeSelect').value;
+    const stoneTypeDef = stoneTypes.find(s=>s.id===stoneTypeId);
+    const entry = stoneTypeId && client.stoneRates ? normalizeStoneRateEntry(client.stoneRates[stoneTypeId], stoneTypeDef) : null;
+    $('stRatePerGram').value = entry ? entry.rate : 0;
+  } else {
+    $('stRatePerGram').value = 0;
+  }
+  $('stoneTypeField').style.display = (subCategory === 'Stone') ? '' : 'none';
+  if(subCategory !== 'Stone') $('stoneTypeSelect').value = '';
+
+  // Branch selector: populate with this client's branches whenever they have any.
+  // (e.g. Joy Alukkas has multiple locations — Coimbatore, Chennai, etc.)
+  const branchSel = $('branchSelect');
+  const branches = client ? (client.branches||[]) : [];
+  if(branches.length){
+    const keepVal = branchSel.value;
+    branchSel.innerHTML = branches.map(b=>`<option value="${escapeHtml(b)}">${escapeHtml(b)}</option>`).join('');
+    branchSel.value = branches.includes(keepVal) ? keepVal : branches[0];
+    $('branchField').style.display = '';
+  } else {
+    branchSel.innerHTML = '';
+    $('branchField').style.display = 'none';
+  }
+
+  // Stone weight can only be entered when sub category is "Stone" — freeze it for "Plain".
+  const stwtField = $('stwt');
+  if(subCategory === 'Stone'){
+    stwtField.disabled = false;
+    stwtField.style.background = '#fff';
+  } else {
+    stwtField.value = '0';
+    stwtField.disabled = true;
+    stwtField.style.background = '#F3F1EB';
+  }
+
+  if(typedName && !client){
+    $('clientMatchNote').textContent = `No client named "${typedName}" yet — click + Add to create one.`;
+  } else {
+    $('presetNote').textContent = client
+      ? `Loaded preset for ${client.name}${category ? ' / '+category : ''}${subCategory ? ' / '+subCategory : ''} — values are editable.`
+      : '';
+    $('clientMatchNote').textContent = '';
+  }
+  calculate();
+}
+$('clientInput').addEventListener('input', applyClientPreset);
+$('addClientQuickBtn').addEventListener('click', ()=>{
+  const typedName = $('clientInput').value.trim();
+  clearClientForm();
+  $('cName').value = typedName;
+  document.querySelector('[data-tab="clients"]').click();
+  window.scrollTo({top:0, behavior:'smooth'});
+  $('cName').focus();
+});
+['category','subCategory'].forEach(id=>{
+  $(id).addEventListener('change', applyClientPreset);
+});
+$('saleType').addEventListener('change', ()=>{
+  const otherLines = orders.filter(o=>o.dcNumber===currentDcNumber && o.id!==editingOrderId);
+  if(!otherLines.length && $('saleType').value){
+    currentBillSaleType = $('saleType').value;
+  }
+  applySaleTypeLock();
+  calculate();
+});
+$('stoneTypeSelect').addEventListener('change', applyClientPreset);
+['grwt','stwt','melting','totalTouch','stRatePerGram','otherCharges'].forEach(id=>{
+  $(id).addEventListener('input', calculate);
+});
+// Rate/gram can be entered either as "without GST" or "with GST 3%" — whichever the
+// person types into, the other box is filled in automatically. rateEditSource tracks
+// which one was typed last so calculate() knows which direction to derive from.
+let rateEditSource = 'rate';
+$('rate').addEventListener('input', ()=>{ rateEditSource = 'rate'; calculate(); });
+$('rateWithGst').addEventListener('input', ()=>{ rateEditSource = 'rateWithGst'; calculate(); });
+
+function calculate(){
+  const grwt = parseFloat($('grwt').value)||0;
+  const stwt = parseFloat($('stwt').value)||0;
+  const netwt = grwt - stwt;
+  $('netwt').value = fmtWt(netwt);
+
+  const totalTouch = parseFloat($('totalTouch').value)||0;
+  // Rate/gram — a single per-bill rate (GST is now calculated separately as an
+  // explicit breakup below, not baked into the rate itself).
+  let rate = parseFloat($('rate').value)||0;
+  let rateWithGst = rate * 1.03;
+  $('rateWithGst').value = fmt(rateWithGst);
+  const stRatePerGram = parseFloat($('stRatePerGram').value)||0;
+  const otherCharges = parseFloat($('otherCharges').value)||0;
+  const subCategory = $('subCategory').value;
+  const pcsVal = parseFloat($('pcs').value)||0;
+  const stoneTypeId = $('stoneTypeSelect').value;
+  const stoneTypeDef = stoneTypes.find(s=>s.id===stoneTypeId);
+  const calcClient = findClientByName($('clientInput').value);
+  // The charge method (pcs×rate vs weight×rate) is set per client per stone type
+  // in the Client master; fall back to the stone type's own default if the
+  // client hasn't set one.
+  const stoneMethod = (calcClient && calcClient.stoneRates && calcClient.stoneRates[stoneTypeId])
+    ? normalizeStoneRateEntry(calcClient.stoneRates[stoneTypeId], stoneTypeDef).method
+    : (stoneTypeDef ? stoneTypeDef.chargeMethod : 'pergram');
+
+  const saleType = $('saleType') ? $('saleType').value : '';
+  // Melting % is read straight from the input field above — which is
+  // auto-filled from Client master when a client is picked (applyClientPreset)
+  // and can still be hand-edited per order if needed. This is the single
+  // source of truth, so the printed MELTING column always matches what was
+  // actually used in the calculation.
+  const meltingUsed = parseFloat($('melting').value)||92;
+  // Two separate weights are tracked:
+  //  - Fine wt   = net wt × TOTAL touch %  (the full touch weight)
+  //  - Wastage wt = net wt × WASTAGE touch % (total touch % − client's melting %)
+  // Sale bills bill on Fine wt (net wt × total touch % × rate). Making bills
+  // (job work) bill only the making/labour charge, i.e. on Wastage wt. Rate
+  // is always the WITHOUT-GST figure; GST is added separately below, never
+  // folded into this amount.
+  const fineWt = netwt * (totalTouch/100);
+  const makingPct = totalTouch - meltingUsed; // wastage touch %
+  const wastageWt = netwt * (makingPct/100);
+  const makingWt = wastageWt;
+  if($('makingPctLabel')) $('makingPctLabel').textContent = fmt(makingPct).replace(/\.00$/,'') + '%';
+  if($('makingWtDisplay')) $('makingWtDisplay').value = fmtWt(makingWt) + ' g';
+  let metalVal, makingNoteText;
+  if(!saleType){
+    metalVal = 0;
+    makingNoteText = 'Select a sale type above (Sale or Making) to calculate the amount.';
+  } else if(saleType === '1'){
+    metalVal = wastageWt * rate;
+    makingNoteText = `Wastage touch: ${fmt(makingPct).replace(/\.00$/,'')}% &rarr; Wastage wt ${fmtWt(wastageWt)}g &times; \u20B9${fmt(rate)} = \u20B9${fmt(metalVal)}`;
+  } else {
+    metalVal = fineWt * rate;
+    makingNoteText = `Fine wt (Net wt &times; Total touch ${fmt(totalTouch).replace(/\.00$/,'')}%): ${fmtWt(fineWt)}g &times; \u20B9${fmt(rate)} = \u20B9${fmt(metalVal)}`;
+  }
+  if($('makingNote')) $('makingNote').innerHTML = makingNoteText;
+  let stCost = 0;
+  let stCostLabel = '';
+  if(subCategory === 'Stone'){
+    if(stoneMethod === 'perpcs'){
+      stCost = pcsVal * stRatePerGram;
+      stCostLabel = `${pcsVal} pcs × ₹${fmt(stRatePerGram)} = ₹${fmt(stCost)}`;
+    } else {
+      stCost = stwt * stRatePerGram;
+      stCostLabel = `${fmtWt(stwt)}g × ₹${fmt(stRatePerGram)} = ₹${fmt(stCost)}`;
+    }
+  }
+  $('stcost').value = fmt(stCost);
+  // show stone cost method hint near stcost field
+  if(!$('stcostNote')) {
+    const n = document.createElement('p'); n.id='stcostNote'; n.className='small';
+    $('stcost').parentNode.appendChild(n);
+  }
+  $('stcostNote').textContent = stCostLabel;
+
+  const otherChargesRaw = parseFloat($('otherCharges').value)||0;
+  const otherChargesType = $('otherChargesType').value;
+  const otherChargesAmt = (otherChargesType === 'pergram') ? (otherChargesRaw * netwt) : otherChargesRaw;
+  if(otherChargesType === 'pergram'){
+    $('otherChargesCalc').textContent = `₹${fmt(otherChargesRaw)}/g × ${fmtWt(netwt)}g = ₹${fmt(otherChargesAmt)}`;
+  } else {
+    $('otherChargesCalc').textContent = '';
+  }
+
+  // GST breakup: Making bills are taxed at 5% on the gold/making amount and
+  // 3% on the stone amount; Sales (invoice) bills are taxed at a flat 3% on
+  // gold and stone alike. GST is always applied on the amount actually
+  // arrived at (rounded to the paisa, exactly as it would be written on
+  // paper) — never derived by cross-multiplying rate × 1.03 or similar.
+  const gstGoldPct = (saleType === '1') ? 0.05 : 0.03;
+  const gstStonePct = 0.03;
+  const gstGold = round2(metalVal) * gstGoldPct;
+  const gstStone = round2(stCost) * gstStonePct;
+
+  const amount = metalVal + stCost + gstGold + gstStone + otherChargesAmt;
+
+  $('outNetwt').textContent = fmtWt(netwt) + ' g';
+  if($('outMeltUsedPct')) $('outMeltUsedPct').textContent = fmt(makingPct).replace(/\.00$/,'');
+  if($('outMeltUsedWt')) $('outMeltUsedWt').textContent = fmtWt(makingWt) + ' g';
+  $('outMetalVal').textContent = '\u20B9' + fmt(metalVal);
+  $('outStCost').textContent = '\u20B9' + fmt(stCost);
+  if($('outGstGold')) $('outGstGold').textContent = '\u20B9' + fmt(gstGold);
+  if($('outGstStone')) $('outGstStone').textContent = '\u20B9' + fmt(gstStone);
+  $('outOther').textContent = '\u20B9' + fmt(otherChargesAmt);
+  $('outAmount').textContent = '\u20B9' + fmt(amount);
+
+  return {grwt, stwt, netwt, totalTouch, rate, rateWithGst, stRatePerGram, stCost, stoneMethod, otherChargesAmt, otherChargesType, otherChargesRaw, metalVal, gstGold, gstStone, amount, saleType, meltingUsed, makingPct, makingWt, fineWt, wastageWt};
+}
+
+function todayStr(){
+  const d = new Date();
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+function clearOrderForm(){
+  $('orderNumber').value=''; $('jobCardNumber').value=''; $('particulars').value='';
+  $('clientInput').value=''; $('category').value=''; $('subCategory').value='';
+  $('orderDate').value = todayStr();
+  $('pcs').value = '1';
+  ['grwt','stwt','totalTouch','rate','rateWithGst','stRatePerGram','otherCharges'].forEach(id=>$(id).value='0');
+  $('bulkRate').value = '';
+  $('melting').value = '92';
+  $('saleType').value = '';
+  currentBillSaleType = ''; // brand new bill — sale type is unlocked again
+  rateEditSource = 'rate';
+  editingOrderId = null;
+  $('saveOrderBtn').textContent = 'Save';
+  $('presetNote').textContent=''; $('clientMatchNote').textContent='';
+  applyClientPreset();
+  refreshCurrentBillPanel();
+}
+$('clearOrderBtn').addEventListener('click', clearOrderForm);
+
+// Clears only the line-specific fields; keeps Date / Client / Order number / Job card
+// number so multiple lines can be added for the same client+order until "Save form"
+// starts a new one. The bill's Sale type and Rate (bulkRate/rate/rateWithGst)
+// are deliberately NOT reset here — they apply once per bill, not per item.
+function clearForNewLine(){
+  $('particulars').value='';
+  $('category').value=''; $('subCategory').value='';
+  $('orderNumber').value='';
+  $('pcs').value = '1';
+  ['grwt','stwt','totalTouch','stRatePerGram','otherCharges'].forEach(id=>$(id).value='0');
+  $('melting').value = '92'; $('otherChargesType').value = 'flat'; $('otherChargesCalc').textContent = '';
+  $('stoneTypeSelect').value=''; $('stoneTypeField').style.display='none';
+  $('presetNote').textContent=''; $('clientMatchNote').textContent='';
+  applyClientPreset();
+  refreshCurrentBillPanel();
+}
+
+// ── SALE TYPE LOCK (per bill) ───────────────────────────────────────
+// A bill (DC) must be entirely "Making sales" or entirely "Sales against
+// invoice" — once the first line of a bill is SAVED, every later line on
+// that same DC is locked to match it. Before anything is saved, the
+// dropdown stays open so the choice can still be changed freely.
+function applySaleTypeLock(){
+  const sel = $('saleType');
+  const note = $('saleTypeLockNote');
+  if(!sel) return;
+  const otherLines = orders.filter(o=>o.dcNumber===currentDcNumber && o.id!==editingOrderId);
+  // Only lock once a line has actually been saved on this bill — an
+  // in-progress, unsaved selection never locks the dropdown.
+  const lockedVal = otherLines.length ? (otherLines[0].saleType || '1') : '';
+  if(lockedVal){
+    sel.value = lockedVal;
+    sel.disabled = true;
+    sel.style.background = '#F3F1EB';
+    if(note) note.textContent = `Locked to "${sel.options[sel.selectedIndex].text}" — every line on ${currentDcNumber||'this bill'} must match. Start a new bill ("Save form") to change it.`;
+  } else {
+    sel.disabled = false;
+    sel.style.background = '#fff';
+    if(note) note.textContent = 'Choose Sale or Making first — it locks for this whole bill only once the first line is saved. The rate is set once here for the whole bill, not for every item.';
+  }
+  updateFormLockState();
+}
+
+// Until Sale type is chosen, the rest of the form (client, particulars,
+// weights, rate, etc.) stays disabled — sale type has to be picked first.
+const FORM_GATED_IDS = ['bulkRate','applyBulkRateBtn','clientInput','addClientQuickBtn','orderDate','branchSelect',
+  'orderNumber','category','subCategory','particulars','pcs','grwt','stwt','melting','stRatePerGram',
+  'otherCharges','otherChargesType','saveOrderBtn'];
+function updateFormLockState(){
+  const chosen = !!$('saleType').value;
+  FORM_GATED_IDS.forEach(id=>{
+    const el = $(id);
+    if(el) el.disabled = !chosen;
+  });
+}
+
+// ── CURRENT BILL REFERENCE LIST ─────────────────────────────────────
+// Lists every line already saved on the DC currently open in the calculator,
+// right below the form, so nothing gets missed before printing. Also doubles
+// as the entry point for editing an existing line or adding another product
+// to the same bill.
+function renderCurrentBillLines(){
+  const wrap = $('currentBillLinesWrap');
+  const label = $('currentBillDcLabel');
+  const totalsWrap = $('currentBillTotals');
+  if(!wrap) return;
+  if(label) label.textContent = currentDcNumber ? `(${currentDcNumber})` : '';
+  const lines = orders.filter(o=>o.dcNumber===currentDcNumber).sort((a,b)=>(a.sno||0)-(b.sno||0));
+  if(!lines.length){
+    wrap.innerHTML = '<p class="empty">No lines added yet for this bill — saved lines will list here for verification.</p>';
+    if(totalsWrap) totalsWrap.style.display = 'none';
+    return;
+  }
+  const isAdmin = currentUser && currentUser.role === 'admin';
+  wrap.innerHTML = `<table><thead><tr>
+    <th>#</th><th>Particulars</th><th>Category</th><th>Pcs</th><th>Net.wt</th><th>Amount</th><th></th>
+  </tr></thead><tbody>${lines.map((o,i)=>`<tr>
+    <td>${i+1}</td>
+    <td>${escapeHtml(titleCase(o.particulars||''))}</td>
+    <td>${escapeHtml(o.category||'')}${o.subCategory?' / '+escapeHtml(o.subCategory):''}</td>
+    <td>${o.pcs||0}</td>
+    <td>${fmtWt(o.netwt||0)} g</td>
+    <td>&#8377;${fmt(o.amount||0)}</td>
+    <td>
+      <button class="iconbtn" style="color:var(--accent);" onclick="editOrderLine('${o.id}')">Edit</button>
+      ${isAdmin ? `<button class="iconbtn" onclick="deleteCurrentBillLine('${o.id}')">Remove</button>` : ''}
+    </td>
+  </tr>`).join('')}</tbody></table>`;
+  const total = computeBillTotals(lines).grand;
+  if(totalsWrap) totalsWrap.style.display = '';
+  if($('currentBillCount')) $('currentBillCount').textContent = lines.length;
+  if($('currentBillTotal')) $('currentBillTotal').textContent = '\u20B9'+fmt(total);
+}
+
+function refreshCurrentBillPanel(){
+  applySaleTypeLock();
+  renderCurrentBillLines();
+  updateEditingDcBadge();
+  refreshFormNav();
+}
+
+// Recomputes one saved line's metal value and total amount at a new rate/gram,
+// keeping its weights, touch %, stone cost and other charges exactly as they
+// were — mirrors the same formulas used live in calculate().
+function recalcOrderWithRate(o, newRate){
+  const rate = newRate;
+  const rateWithGst = rate * 1.03;
+  const makingPct = (o.makingPct != null) ? o.makingPct : ((o.totalTouch||0) - (o.meltingUsed!=null?o.meltingUsed:92));
+  const fineWt = (o.fineWt != null) ? o.fineWt : (o.netwt||0) * ((o.totalTouch||0)/100);
+  const wastageWt = (o.wastageWt != null) ? o.wastageWt : (o.netwt||0) * (makingPct/100);
+  const metalVal = (o.saleType === '1') ? (wastageWt * rate) : (fineWt * rate);
+  const stCost = o.stcost||0;
+  const gstGoldPct = (o.saleType === '1') ? 0.05 : 0.03;
+  const gstGold = round2(metalVal) * gstGoldPct;
+  const gstStone = round2(stCost) * 0.03;
+  const amount = metalVal + stCost + gstGold + gstStone + (o.otherCharges||0);
+  return {...o, rate, rateWithGst, metalVal, gstGold, gstStone, amount};
+}
+
+// The Rate field is set once per bill (not re-typed for every item). Typing
+// into it immediately feeds the item currently being entered — no button
+// click needed for that. The "Apply to saved lines" button is only needed if
+// the rate changes mid-bill and already-saved lines on this DC should be
+// recalculated to match.
+$('bulkRate').addEventListener('input', ()=>{
+  const newRate = parseFloat($('bulkRate').value)||0;
+  rateEditSource = 'rate';
+  $('rate').value = newRate;
+  calculate();
+});
+
+$('applyBulkRateBtn').addEventListener('click', async ()=>{
+  const newRate = parseFloat($('bulkRate').value);
+  if(!newRate || newRate <= 0){ toast('Enter a valid rate first'); $('bulkRate').focus(); return; }
+  const lines = orders.filter(o=>o.dcNumber===currentDcNumber);
+  if(!lines.length){ toast('No saved lines on this bill yet — the rate above already applies to your next Save'); return; }
+  if(!confirm(`Apply ₹${fmt(newRate)}/g to all ${lines.length} saved line(s) on ${currentDcNumber} and recalculate their amounts?`)) return;
+  orders = orders.map(o => o.dcNumber===currentDcNumber ? recalcOrderWithRate(o, newRate) : o);
+  await saveOrders();
+  renderOrdersTable();
+  rateEditSource = 'rate';
+  $('rate').value = newRate;
+  calculate();
+  refreshCurrentBillPanel();
+  toast(`Rate updated on ${lines.length} line(s)`);
+});
+
+window.deleteCurrentBillLine = async function(id){
+  if(!currentUser || currentUser.role !== 'admin'){ toast('Only admin can remove lines'); return; }
+  if(!confirm('Remove this line from the bill? This cannot be undone.')) return;
+  orders = orders.filter(o=>o.id!==id);
+  await saveOrders();
+  renderOrdersTable();
+  refreshCurrentBillPanel();
+  toast('Line removed');
+};
+
+$('saveOrderBtn').addEventListener('click', async ()=>{
+  if(!$('saleType').value){ toast('Choose a sale type first — Sale or Making'); $('saleType').focus(); return; }
+  const particulars = titleCase($('particulars').value.trim());
+  if(!particulars){ toast('Particulars is required'); $('particulars').focus(); return; }
+  const typedName = $('clientInput').value.trim();
+  const client = findClientByName(typedName);
+  const category = $('category').value;
+  const subCategory = $('subCategory').value;
+  if(!client){ toast('Select an existing client to load touch % — use + Add if new'); return; }
+  if(!category){ toast('Select a category'); return; }
+  if(!subCategory){ toast('Select a sub category'); return; }
+  if(subCategory === 'Stone'){
+    const stoneTypeVal = $('stoneTypeSelect') ? $('stoneTypeSelect').value : '';
+    const stwtVal = parseFloat($('stwt').value)||0;
+    if(!stoneTypeVal || !stwtVal){
+      toast('Fill stone weight or type of stone');
+      return;
+    }
+  }
+  const lockLines = orders.filter(o=>o.dcNumber===currentDcNumber && o.id!==editingOrderId);
+  if(lockLines.length && lockLines[0].saleType !== $('saleType').value){
+    toast('Sale type is locked to match the rest of this bill'); return;
+  }
+  const calc = calculate();
+  if(!calc.totalTouch){ toast('This client has no touch % set for that category/sub category — update it in Client master'); return; }
+  const existing = editingOrderId ? orders.find(o=>o.id===editingOrderId) : null;
+  const order = {
+    id: existing ? existing.id : uid(),
+    sno: existing ? existing.sno : (lockLines.length + 1),
+    orderDate: $('orderDate').value || todayStr(),
+    orderNumber: $('orderNumber').value.trim(),
+    jobCardNumber: $('jobCardNumber').value.trim(),
+    dcNumber: existing ? existing.dcNumber : currentDcNumber,
+    clientName: client.name,
+    branch: $('branchSelect').value || (client.branches && client.branches[0]) || '',
+    category,
+    subCategory,
+    stoneType: (subCategory==='Stone' && $('stoneTypeSelect').value)
+      ? $('stoneTypeSelect').options[$('stoneTypeSelect').selectedIndex].text + (calc.stoneMethod==='perpcs' ? ' (pcs×rate)' : ' (wt×rate)')
+      : '',
+    particulars,
+    pcs: parseFloat($('pcs').value)||0,
+    grwt: calc.grwt, stwt: calc.stwt, netwt: calc.netwt,
+    melting: parseFloat($('melting').value)||0,
+    totalTouch: calc.totalTouch,
+    saleType: calc.saleType,
+    meltingUsed: calc.meltingUsed,
+    makingPct: calc.makingPct,
+    fineWt: calc.fineWt,
+    wastageWt: calc.wastageWt,
+    stRatePerGram: calc.stRatePerGram,
+    stcost: calc.stCost,
+    otherCharges: calc.otherChargesAmt,
+    otherChargesType: calc.otherChargesType,
+    otherChargesRaw: calc.otherChargesRaw,
+    rate: calc.rate,
+    rateWithGst: calc.rateWithGst,
+    metalVal: calc.metalVal,
+    gstGold: calc.gstGold,
+    gstStone: calc.gstStone,
+    amount: calc.amount,
+    includedCharges: [...currentDcIncludedCharges],
+    savedAt: existing ? existing.savedAt : new Date().toISOString()
+  };
+  if(existing){
+    orders = orders.map(o => o.id===existing.id ? order : o);
+    editingOrderId = null;
+    $('saveOrderBtn').textContent = 'Save';
+    await saveOrders();
+    rememberParticulars(particulars);
+    renderOrdersTable();
+    clearForNewLine();
+    toast('Line updated');
+    return;
+  }
+  orders.push(order);
+  await saveOrders();
+  rememberParticulars(particulars);
+  renderOrdersTable();
+  clearForNewLine();
+  toast('Saved — client kept, ready for next line');
+});
+
+// "Save form" closes the current DC and moves straight to a brand-new form
+// with a fresh, automatically-generated DC number — it does NOT print.
+// Printing is done separately from the Saved orders tab ("Print form"/
+// "Print all"), so saving never forces a print dialog to pop up.
+// If we were only editing an already-saved DC (preEditDcNumber is set), the
+// "next new bill" number was already reserved before editing began — go back
+// to THAT number instead of calling startNewDc(), which would hand out a
+// brand-new number and burn/skip the one already reserved (e.g. editing
+// DC-02 then jumping to DC-04 instead of the correct DC-03).
+async function returnToReservedOrAdvance(){
+  if(preEditDcNumber !== null){
+    currentDcNumber = preEditDcNumber;
+    preEditDcNumber = null;
+    try{ await window.storage.set('currentDcNumber', currentDcNumber, true); }catch(err){ /* ignore */ }
+    currentBillSaleType = '';
+    if($('dcNumberDisplay')) $('dcNumberDisplay').value = currentDcNumber;
+    updateEditingDcBadge();
+    renderDcCounterStatus();
+  } else {
+    await startNewDc();
+  }
+}
+
+$('saveFormBtn').addEventListener('click', async ()=>{
+  const dcToClose = currentDcNumber;
+  const lines = orders.filter(o => o.dcNumber === dcToClose);
+  if(!lines.length){ toast('Add at least one line before saving the form'); return; }
+  const wasEditing = preEditDcNumber !== null;
+  await returnToReservedOrAdvance();
+  clearOrderForm();
+  toast(wasEditing ? ('Changes saved to '+dcToClose+' — back to '+currentDcNumber) : ('Form saved — ready for a new form ('+currentDcNumber+')'));
+});
+
+// "+ New form" moves on to a fresh blank form on the next DC number — same
+// as "Save form". A new DC number only ever gets handed out once the CURRENT
+// form has actually been filled in (at least one line saved); an empty form
+// just gets a reminder instead of burning a number.
+$('newFormBtn').addEventListener('click', async ()=>{
+  const dcLeaving = currentDcNumber;
+  const hasLines = orders.some(o=>o.dcNumber===dcLeaving);
+  if(!hasLines){ toast('Add at least one line before starting a new form'); return; }
+  const wasEditing = preEditDcNumber !== null;
+  await returnToReservedOrAdvance();
+  clearOrderForm();
+  toast(wasEditing ? ('Changes saved to '+dcLeaving+' — back to '+currentDcNumber) : ('New form ready — '+currentDcNumber));
+});
+
+$('printAllOrdersBtn').addEventListener('click', printAllOrders);
+
+// Merges two or more selected DC forms into a single combined bill — adds a
+// CITY/BRANCH column (since the merged lines may span more than one branch)
+// and groups the printed lines city-wise, each with its own subtotal, then
+// one overall summary/GST working and grand total for the whole combined bill.
+function printCombinedBill(keys){
+  if(!currentOrderGroups) return;
+  const allLines = [];
+  keys.forEach(k=>{
+    const g = currentOrderGroups.groups[k];
+    if(g) allLines.push(...g);
+  });
+  if(allLines.length < 1){ toast('Nothing to print'); return; }
+  const originalTitle = document.title;
+  const dcLabels = [...new Set(allLines.map(o=>o.dcNumber).filter(Boolean))];
+  document.title = `Combined - ${dcLabels.join('+')}`;
+  const clientNames = [...new Set(allLines.map(o=>o.clientName).filter(Boolean))];
+  const hasMaking = allLines.some(o=>o.saleType==='1');
+
+  // Group lines by branch/city, city names sorted alphabetically so the bill
+  // reads consistently city-wise regardless of which order the lines were
+  // originally saved in.
+  const cityGroups = {}; const cityOrder = [];
+  allLines.forEach(o=>{
+    const city = o.branch || 'Unspecified';
+    if(!cityGroups[city]){ cityGroups[city]=[]; cityOrder.push(city); }
+    cityGroups[city].push(o);
+  });
+  cityOrder.sort((a,b)=>a.localeCompare(b));
+
+  let out = companyLetterheadHtml();
+  out += `<div style="margin-bottom:10px;font-family:Arial,sans-serif;">
+    <div style="font-size:13px;font-weight:700;color:#555;margin-bottom:2px;">COMBINED BILL &mdash; ${dcLabels.map(escapeHtml).join(' + ')}</div>
+    <span style="font-size:18px;font-weight:800;color:#000;">CLIENT- ${clientNames.length===1 ? escapeHtml(clientNames[0]) : escapeHtml(clientNames.join(', '))}</span>
+  </div>`;
+  out += rateSummaryHtml(allLines);
+  cityOrder.forEach(city=>{
+    const cLines = cityGroups[city];
+    out += `<div style="font-family:Arial,sans-serif;font-size:13px;font-weight:700;background:#F1E4D0;color:#000;padding:5px 8px;margin-top:12px;border-radius:3px;">BRANCH/CITY: ${escapeHtml(city)} &mdash; ${cLines.length} line(s)</div>`;
+    out += `<table style="margin-bottom:6px;">
+      <thead><tr>${headerColsHtml(hasMaking, true)}</tr></thead>
+      <tbody>${cLines.map(o=>lineRow(o, hasMaking, true)).join('')}</tbody>
+      <tfoot>${footerRow(cLines, hasMaking, true)}</tfoot>
+    </table>`;
+  });
+  out += summaryWorkingHtml(allLines);
+  if(clientNames.length === 1){
+    out += customChargesSummaryHtml(clientNames[0], allLines);
+    const customTotal = calcCustomCharges(clientNames[0], allLines).reduce((s,c)=>s+c.total,0);
+    if(customTotal){
+      const finalGrand = computeBillTotals(allLines).grand + customTotal;
+      out += `<table style="margin-top:4px;width:auto;min-width:340px;"><tr><td><b>Custom charges total</b></td><td>&#8377;${fmt(customTotal)}</td></tr><tr style="font-size:16px;border-top:1px solid #999;"><td><b>GRAND TOTAL</b></td><td><b>&#8377;${fmt(finalGrand)}</b></td></tr></table>`;
+    }
+  } else {
+    out += `<p style="font-family:Arial,sans-serif;font-size:11px;color:#666;margin-top:6px;">Custom charges are client-specific and aren't shown here since this combined bill spans more than one client — check each client's individual DC form for their charges.</p>`;
+  }
+  $('printReceipt').innerHTML = out;
+  setTimeout(()=>{
+    window.print();
+    setTimeout(()=>{ document.title = originalTitle; }, 500);
+  }, 150);
+}
+$('combineDcBtn').addEventListener('click', ()=>{
+  if(!currentOrderGroups){ toast('No saved orders yet'); return; }
+  if(combineSelectedIdx.size < 2){ toast('Tick at least 2 DC forms\' checkboxes to combine them'); return; }
+  const keys = [...combineSelectedIdx].map(i=>currentOrderGroups.keys[i]).filter(Boolean);
+  printCombinedBill(keys);
+});
+
+// Prints a clean, full-page reference list of every saved client — just the
+// contact/location details a record book needs, with no Edit/Delete buttons
+// or on-screen-only columns. Sorted alphabetically so it's easy to look up.
+function printClientList(){
+  if(!clients.length){ toast('No clients saved yet'); return; }
+  const originalTitle = document.title;
+  document.title = 'Client list';
+  const sorted = clients.slice().sort((a,b)=>(a.name||'').localeCompare(b.name||''));
+  const rows = sorted.map((c,i) => `<tr>
+    <td>${i+1}</td>
+    <td>${escapeHtml(c.name)}</td>
+    <td>${escapeHtml(c.phone||'')}</td>
+    <td>${[c.incharge1,c.incharge2].filter(Boolean).map(escapeHtml).join(', ')||'—'}</td>
+    <td>${(c.branches||[]).map(b=>escapeHtml(b)).join(', ')||'—'}</td>
+    <td>${escapeHtml(c.gst||'')}</td>
+  </tr>`).join('');
+  $('printReceipt').innerHTML = `
+    ${companyLetterheadHtml()}
+    <h2 style="font-family:Arial,Helvetica,sans-serif;margin:0 0 10px;">Client list</h2>
+    <table style="width:100%;border-collapse:collapse;">
+      <thead><tr><th>#</th><th>Client name</th><th>Phone</th><th>Incharge</th><th>Branches</th><th>GST</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+    <p style="font-family:Arial,sans-serif;font-size:11px;color:#666;margin-top:14px;">Printed ${new Date().toLocaleString()} &mdash; ${sorted.length} client(s)</p>`;
+  setTimeout(()=>{
+    window.print();
+    setTimeout(()=>{ document.title = originalTitle; }, 500);
+  }, 150);
+}
+$('printClientsBtn').addEventListener('click', printClientList);
+
+function printOrder(o){
+  const dt = new Date(o.savedAt);
+  const originalTitle = document.title;
+  const safeName = (o.clientName || 'order').replace(/[\\/:*?"<>|]/g, '').trim() || 'order';
+  document.title = `${safeName} - ${o.orderNumber || o.sno}`;
+  const hasMaking = o.saleType === '1';
+  $('printReceipt').innerHTML = `
+    ${companyLetterheadHtml()}
+    <h2 style="font-family:Arial,Helvetica,sans-serif;margin:0 0 4px;">Order receipt</h2>
+    <div style="margin-bottom:10px;font-family:Arial,sans-serif;display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:6px;">
+      <div>
+        <span style="font-size:18px;font-weight:800;color:#000;">CLIENT- ${escapeHtml(o.clientName)}</span>
+        ${o.branch ? `&nbsp;&nbsp;&nbsp;<span style="font-size:15px;font-weight:700;color:#333;">BRANCH- ${escapeHtml(o.branch)}</span>` : ''}
+      </div>
+      <div style="font-size:10px;color:#666;text-align:right;">
+        <div>DATE- ${o.orderDate||''}</div>
+        <div>TIME- ${o.savedAt ? new Date(o.savedAt).toLocaleTimeString() : ''}</div>
+      </div>
+    </div>
+    ${rateSummaryHtml([o])}
+    <table>
+      <thead><tr>${headerColsHtml(hasMaking)}</tr></thead>
+      <tbody>${lineRow(o, hasMaking)}</tbody>
+      <tfoot>${footerRow([o], hasMaking)}</tfoot>
+    </table>`;
+  setTimeout(()=>{
+    window.print();
+    setTimeout(()=>{ document.title = originalTitle; }, 500);
+  }, 150);
+}
+function companyLetterheadHtml(){
+  // Logo is kept compact and to the side (left) of the letterhead, rather
+  // than large and centered, so it doesn't dominate the printed form.
+  const logoBlock = companyLogo
+    ? `<img src="${companyLogo}" style="height:70px;width:auto;max-width:220px;object-fit:contain;">`
+    : `<div style="font-family:Arial,Helvetica,sans-serif;font-size:20px;font-weight:800;letter-spacing:1px;color:#000;">${escapeHtml(companyName)}</div>`;
+  return `<div style="margin-bottom:16px;">
+    <div style="display:flex;align-items:center;justify-content:flex-start;min-height:78px;gap:14px;">
+      ${logoBlock}
+      ${companyLogo ? `<div style="font-family:Arial,Helvetica,sans-serif;font-size:16px;font-weight:700;color:#000;">${escapeHtml(companyName)}</div>` : ''}
+    </div>
+    <div style="border-bottom:2px solid #000;margin-top:6px;"></div>
+  </div>`;
+}
+
+function saleTypeLabel(st){ return st==='2' ? 'Sale' : 'Making'; }
+
+// FINE WT = net wt × TOTAL touch %. WASTAGE WT (GOLD) = net wt × WASTAGE
+// touch % (total touch % − client's melting %, e.g. 94.75 − 91.60 = 3.15%).
+// Sale bills bill the AMOUNT on FINE WT × rate; Making bills bill it on
+// WASTAGE WT × rate. Rate/gram is shown once above the table instead of as a
+// column (see rateSummaryHtml). Other charges are recorded in the app but
+// intentionally left off the printed bill.
+function lineColumnLabels(hasMaking, showBranch){
+  const labels = ['S.NO'];
+  if(showBranch) labels.push('CITY/BRANCH');
+  labels.push('ORDER NUMBER','JOB CARD/PO NO.','SALE TYPE','CATEGORY','PARTICULARS','STONE TYPE','MELTING','PCS',
+    'GR.WT','ST.WT','NET.WT','TOTAL TOUCH-%','WASTAGE TOUCH %');
+  labels.push('FINE WT','WASTAGE WT (GOLD)','ST.RATE/G','ST.COST','AMOUNT');
+  return labels;
+}
+function headerColsHtml(hasMaking, showBranch){
+  return lineColumnLabels(hasMaking, showBranch).map(h=>`<th>${h}</th>`).join('');
+}
+function lineColumnValues(o, hasMaking, showBranch){
+  const meltingUsed = o.meltingUsed != null ? o.meltingUsed : 92;
+  const makingPct = (o.makingPct != null) ? o.makingPct : (o.totalTouch - meltingUsed);
+  const fineWt = (o.fineWt != null) ? o.fineWt : (o.netwt * (o.totalTouch/100));
+  const wastageWt = (o.wastageWt != null) ? o.wastageWt : (o.netwt * (makingPct/100));
+  const vals = [o.sno];
+  if(showBranch) vals.push(escapeHtml(o.branch||'—'));
+  vals.push(
+    escapeHtml(o.orderNumber), escapeHtml(o.jobCardNumber||''), saleTypeLabel(o.saleType),
+    `${escapeHtml(o.category)} / ${escapeHtml(o.subCategory)}`, escapeHtml(titleCase(o.particulars||'')), escapeHtml(o.stoneType||''),
+    o.melting, (o.pcs!=null?o.pcs:''), fmtWt(o.grwt), fmtWt(o.stwt), fmtWt(o.netwt), o.totalTouch,
+    fmt(makingPct).replace(/\.00$/,'')+'%'
+  );
+  // Rate/gram is shown per line as the actual multiplication used to arrive at
+  // the amount — FINE WT × rate for Sale bills, WASTAGE WT × rate for Making
+  // bills (rate is always the WITHOUT-GST figure). GST is not shown inline
+  // here — it's only in the separate GST summary block.
+  const basisWt = (o.saleType === '1') ? wastageWt : fineWt;
+  const rateFormula = `${fmtWt(basisWt)}g &times; &#8377;${fmt(o.rate||0)}`;
+  const amountCell = `<b>&#8377;${fmt(o.amount)}</b><div style="font-size:9px;color:#555;font-weight:400;white-space:nowrap;">${rateFormula}</div>`;
+  vals.push(fmtWt(fineWt), fmtWt(wastageWt), '&#8377;'+fmt(o.stRatePerGram||0), '&#8377;'+fmt(o.stcost), amountCell);
+  return vals;
+}
+function lineRow(o, hasMaking, showBranch){
+  return `<tr>${lineColumnValues(o, hasMaking, showBranch).map(v=>`<td>${v}</td>`).join('')}</tr>`;
+}
+// Shows Rate/gram above the table instead of as a column. If every line in the
+// group shares the same rate (the common case), one line is shown; if lines
+// use different rates, each distinct rate is listed on its own line.
+function rateSummaryHtml(lines){
+  const distinct = [];
+  lines.forEach(o=>{
+    const key = fmt(o.rate||0);
+    if(!distinct.some(d=>d.key===key)) distinct.push({key, rate:o.rate||0});
+  });
+  if(distinct.length === 1){
+    return `<div style="font-family:Arial,sans-serif;font-size:14px;font-weight:700;color:#000;margin-bottom:8px;">RATE/GRAM: &#8377;${fmt(distinct[0].rate)}</div>`;
+  }
+  return `<div style="font-family:Arial,sans-serif;font-size:12px;color:#000;margin-bottom:8px;">
+    ${distinct.map(d=>`RATE/GRAM: &#8377;${fmt(d.rate)}`).join('<br>')}
+  </div>`;
+}
+function footerRow(lines, hasMaking, showBranch){
+  const totalPcs = lines.reduce((s,o)=>s+(o.pcs||0),0);
+  const totalGr = lines.reduce((s,o)=>s+(o.grwt||0),0);
+  const totalSt = lines.reduce((s,o)=>s+(o.stwt||0),0);
+  const totalNet = lines.reduce((s,o)=>s+(o.netwt||0),0);
+  const totalFine = lines.reduce((s,o)=>s+((o.fineWt!=null)?o.fineWt:(o.netwt||0)*((o.totalTouch||0)/100)),0);
+  const totalWastage = lines.reduce((s,o)=>{
+    if(o.wastageWt!=null) return s+o.wastageWt;
+    const mu = o.meltingUsed!=null?o.meltingUsed:92;
+    const mp = (o.makingPct!=null)?o.makingPct:((o.totalTouch||0)-mu);
+    return s + (o.netwt||0)*(mp/100);
+  },0);
+  const totalStCost = lines.reduce((s,o)=>s+(o.stcost||0),0);
+  const totalAmount = computeBillTotals(lines).grand;
+  let html = `<td colspan="${showBranch?8:7}"><b>TOTAL</b></td>`;
+  html += `<td></td>`; // MELTING
+  html += `<td>${totalPcs}</td><td>${fmtWt(totalGr)}</td><td>${fmtWt(totalSt)}</td><td>${fmtWt(totalNet)}</td>`;
+  html += `<td></td>`; // TOTAL TOUCH-%
+  html += `<td></td>`; // WASTAGE TOUCH %
+  html += `<td>${fmtWt(totalFine)}</td><td>${fmtWt(totalWastage)}</td><td></td><td>&#8377;${fmt(totalStCost)}</td>`;
+  html += `<td><b>&#8377;${fmt(totalAmount)}</b></td>`;
+  return `<tr style="background:#f5f5f5;font-weight:700;">${html}</tr>`;
+}
+
+// Computes bill-level totals with GST applied ONCE on the total amount
+// arrived at across the whole bill (gold/making + stone, summed first, then
+// rounded to the paisa) — not by summing each line's individually-rounded
+// GST. Sale type (and so the gold GST %) is locked the same for every line
+// on one DC, so a single % is safe to use here. Shared by the printed
+// line-items TOTAL row and the Summary working block so both always agree.
+function computeBillTotals(lines){
+  const totalStone = lines.reduce((s,o)=>s+(o.stcost||0),0);
+  // GST% on gold depends on EACH LINE's own sale type (5% Making / 3% Sale),
+  // not one flag for the whole group. Within a single DC this is always
+  // uniform (sale type is locked per bill), but a COMBINED bill can merge
+  // several DCs/branches that don't all share the same sale type — e.g.
+  // Coimbatore (Making) + Hyderabad (Sale). Splitting gold by each line's own
+  // saleType before taxing it keeps every branch taxed at its correct rate,
+  // instead of one branch's rate leaking onto the other's amount.
+  const makingGold = lines.filter(o=>o.saleType==='1').reduce((s,o)=>s+(o.metalVal||0),0);
+  const saleGold = lines.filter(o=>o.saleType!=='1').reduce((s,o)=>s+(o.metalVal||0),0);
+  const totalGold = makingGold + saleGold;
+  const makingGoldArrived = round2(makingGold);
+  const saleGoldArrived = round2(saleGold);
+  const goldArrived = makingGoldArrived + saleGoldArrived;
+  const gstStonePct = 0.03;
+  const stoneArrived = round2(totalStone);
+  const sub = goldArrived + stoneArrived; // amount arrived, in total
+  const totalGstGold = (makingGoldArrived * 0.05) + (saleGoldArrived * 0.03);
+  const totalGstStone = stoneArrived * gstStonePct;
+  const totalGst = totalGstGold + totalGstStone;
+  const grand = sub + totalGst; // amount arrived + GST — never inclusive/cross-multiplied
+  const mixedSaleTypes = makingGoldArrived > 0 && saleGoldArrived > 0;
+  const gstGoldPct = mixedSaleTypes ? null : (makingGoldArrived > 0 ? 0.05 : 0.03); // only meaningful when not mixed
+  return {totalGold, totalStone, goldArrived, stoneArrived, sub, gstGoldPct, gstStonePct, totalGstGold, totalGstStone, totalGst, grand, makingGoldArrived, saleGoldArrived, mixedSaleTypes};
+}
+
+function summaryWorkingHtml(lines){
+  const t = computeBillTotals(lines);
+  if(!t.sub) return ''; // nothing to summarize when the amount arrived is zero
+  const goldGstRow = t.mixedSaleTypes
+    ? `<tr><td>GST on making gold (5% of amount arrived)</td><td>&#8377;${fmt(t.makingGoldArrived*0.05)}</td></tr>
+       <tr><td>GST on sale gold (3% of amount arrived)</td><td>&#8377;${fmt(t.saleGoldArrived*0.03)}</td></tr>`
+    : `<tr><td>GST on gold (${fmt(t.gstGoldPct*100).replace(/\.00$/,'')}% of amount arrived)</td><td>&#8377;${fmt(t.totalGstGold)}</td></tr>`;
+  return `<table style="margin-top:4px;margin-bottom:8px;width:auto;min-width:340px;">
+    <thead><tr><th colspan="2" style="text-align:left;">Summary working</th></tr></thead>
+    <tbody>
+      <tr><td>Gold / making amount</td><td>&#8377;${fmt(t.goldArrived)}</td></tr>
+      <tr><td>Stone amount</td><td>&#8377;${fmt(t.stoneArrived)}</td></tr>
+      <tr style="border-top:1px solid #999;"><td><b>Amount arrived (total)</b></td><td><b>&#8377;${fmt(t.sub)}</b></td></tr>
+      ${goldGstRow}
+      <tr><td>GST on stone (${fmt(t.gstStonePct*100).replace(/\.00$/,'')}% of amount arrived)</td><td>&#8377;${fmt(t.totalGstStone)}</td></tr>
+      <tr><td><b>Total GST</b></td><td><b>&#8377;${fmt(t.totalGst)}</b></td></tr>
+      <tr style="border-top:1px solid #999;"><td><b>Bill total (Amount arrived + GST)</b></td><td><b>&#8377;${fmt(t.grand)}</b></td></tr>
+    </tbody></table>`;
+}
+
+function calcCustomCharges(clientName, lines){
+  const client = findClientByName(clientName);
+  if(!client || !(client.customCharges||[]).length) return [];
+  const totalPcs = lines.reduce((s,o)=>s+(o.pcs||0),0);
+  const totalNetwt = lines.reduce((s,o)=>s+(o.netwt||0),0);
+  // Only charges ticked at order-entry time are billed. Legacy orders saved before
+  // this tick-box existed have no includedCharges field at all — for those, keep
+  // the old behaviour (bill every charge defined for the client) so nothing that
+  // was already saved and printed silently changes.
+  const hasIncludedField = lines.some(o => Array.isArray(o.includedCharges));
+  const includedSet = new Set();
+  lines.forEach(o => (o.includedCharges||[]).forEach(n => includedSet.add(n)));
+  return client.customCharges
+    .filter(ch => !hasIncludedField || includedSet.has(ch.name))
+    .map(ch => {
+    let amt = 0;
+    if(ch.type==='perpcs') amt = totalPcs * ch.rate;
+    else if(ch.type==='pergram') amt = totalNetwt * ch.rate;
+    else amt = ch.rate;
+    // HUID specifically is taxed at 3% GST when ticked — matched by name
+    // (case/space-insensitive) since it's a client-defined custom charge,
+    // not a fixed field. Other custom charges (e.g. Hallmarking) stay as-is.
+    const isHuid = (ch.name||'').trim().toUpperCase() === 'HUID';
+    const gst = isHuid ? round2(amt) * 0.03 : 0;
+    return {name: ch.name, type: ch.type, rate: ch.rate, totalPcs, totalNetwt, amount: amt, gst, total: amt + gst, isHuid};
+  });
+}
+
+function customChargesSummaryHtml(clientName, lines){
+  const charges = calcCustomCharges(clientName, lines);
+  if(!charges.length) return '';
+  const total = charges.reduce((s,c)=>s+c.total,0);
+  return `<table style="margin-top:8px;width:auto;min-width:320px;">
+    <thead><tr><th colspan="3" style="text-align:left;">Custom charges</th></tr>
+    <tr><th>Charge</th><th>Calculation</th><th>Amount</th></tr></thead>
+    <tbody>
+    ${charges.map(ch=>`<tr>
+      <td>${escapeHtml(ch.name)}</td>
+      <td>${ch.type==='perpcs'?`${ch.totalPcs} pcs × ₹${fmt(ch.rate)}`:ch.type==='pergram'?`${fmtWt(ch.totalNetwt)}g × ₹${fmt(ch.rate)}`:`Flat`}</td>
+      <td><b>₹${fmt(ch.amount)}</b></td>
+    </tr>${ch.isHuid?`<tr><td></td><td>GST on HUID (3%)</td><td>₹${fmt(ch.gst)}</td></tr>`:''}`).join('')}
+    <tr><td colspan="2"><b>Total custom charges</b></td><td><b>₹${fmt(total)}</b></td></tr>
+    </tbody></table>`;
+}
+
+// Renders one printable block: a DC label, CLIENT-/DATE-/BRANCH- header, the line
+// items table with a TOTAL row, custom charges (if any), and a grand total.
+// `lines` should all belong to the same client+branch (see printForm/printAllOrders).
+function dcGroupBlockHtml(dcLabel, lines){
+  const name = lines[0].clientName || '';
+  const branch = lines[0].branch || '';
+  const d = lines[0].orderDate || '';
+  const t = lines[0].savedAt ? new Date(lines[0].savedAt).toLocaleTimeString() : '';
+  const linesTotal = computeBillTotals(lines).grand;
+  const customTotal = calcCustomCharges(name, lines).reduce((s,c)=>s+c.total,0);
+  const grandTotal = linesTotal + customTotal;
+  const hasMaking = lines.some(o=>o.saleType==='1');
+  return `
+    <div style="margin-bottom:10px;font-family:Arial,sans-serif;display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:6px;">
+      <div>
+        ${dcLabel ? `<div style="font-size:13px;font-weight:700;color:#555;margin-bottom:2px;">${escapeHtml(dcLabel)}</div>` : ''}
+        <span style="font-size:18px;font-weight:800;color:#000;">CLIENT- ${escapeHtml(name)}</span>
+        ${branch ? `&nbsp;&nbsp;&nbsp;<span style="font-size:15px;font-weight:700;color:#333;">BRANCH- ${escapeHtml(branch)}</span>` : ''}
+      </div>
+      <div style="font-size:10px;color:#666;text-align:right;">
+        <div>DATE- ${d}</div>
+        <div>TIME- ${t}</div>
+      </div>
+    </div>
+    ${rateSummaryHtml(lines)}
+    <table style="margin-bottom:8px;">
+      <thead><tr>${headerColsHtml(hasMaking)}</tr></thead>
+      <tbody>${lines.map(o=>lineRow(o, hasMaking)).join('')}</tbody>
+      <tfoot>${footerRow(lines, hasMaking)}</tfoot>
+    </table>
+    ${customChargesSummaryHtml(name, lines)}
+    ${summaryWorkingHtml(lines)}
+    ${customTotal?`<table style="margin-top:4px;width:auto;min-width:340px;"><tr><td><b>Custom charges total</b></td><td>&#8377;${fmt(customTotal)}</td></tr><tr style="font-size:16px;border-top:1px solid #999;"><td><b>GRAND TOTAL</b></td><td><b>&#8377;${fmt(grandTotal)}</b></td></tr></table>`:''}
+    <div style="margin-bottom:24px;"></div>`;
+}
+
+// Prints one or more line items as a single form, labelled with dcLabel.
+// Normally every line on a DC shares the same client+branch; sub-group defensively
+// in case the client was changed mid-form, so nothing gets silently merged.
+function printGroupLines(dcLabel, lines){
+  if(!lines.length){ toast('Nothing to print'); return false; }
+  const originalTitle = document.title;
+  document.title = `${dcLabel||'order'} - ${lines[0].clientName||'order'}`;
+  const subGroups = {}; const subKeys = [];
+  lines.forEach(o=>{
+    const key = `${o.clientName||''}|||${o.branch||''}`;
+    if(!subGroups[key]){ subGroups[key]=[]; subKeys.push(key); }
+    subGroups[key].push(o);
+  });
+  $('printReceipt').innerHTML = companyLetterheadHtml() +
+    subKeys.map(k => dcGroupBlockHtml(dcLabel, subGroups[k])).join('');
+  setTimeout(()=>{
+    window.print();
+    setTimeout(()=>{ document.title = originalTitle; }, 500);
+  }, 150);
+  return true;
+}
+
+// Prints ONE delivery challan — every line item saved under this DC number,
+// as a single form. Available for print flows (e.g. Saved orders tab); "Save
+// form" itself no longer triggers a print.
+function printForm(dcNumber){
+  const lines = orders.filter(o => o.dcNumber === dcNumber);
+  if(!lines.length){ toast('Add at least one line before saving the form'); return false; }
+  return printGroupLines(dcNumber, lines);
+}
+
+// "Save as PDF" reuses the exact same print rendering as "Print form" — the
+// person picks "Save as PDF" as the destination in the browser's print
+// dialog that opens. The only difference is the suggested file name, which
+// browsers take from the page title: this is always set to the branch name
+// (falling back to client name, then DC number) rather than the DC number,
+// since forms are filed and looked up by branch.
+function saveDcAsPdf(dcNumber, lines){
+  if(!lines.length){ toast('Nothing to save'); return false; }
+  const branchName = lines[0].branch || lines[0].clientName || dcNumber || 'order';
+  const originalTitle = document.title;
+  document.title = branchName;
+  const subGroups = {}; const subKeys = [];
+  lines.forEach(o=>{
+    const key = `${o.clientName||''}|||${o.branch||''}`;
+    if(!subGroups[key]){ subGroups[key]=[]; subKeys.push(key); }
+    subGroups[key].push(o);
+  });
+  $('printReceipt').innerHTML = companyLetterheadHtml() +
+    subKeys.map(k => dcGroupBlockHtml(dcNumber, subGroups[k])).join('');
+  toast('In the print dialog, choose "Save as PDF" as the destination');
+  setTimeout(()=>{
+    window.print();
+    setTimeout(()=>{ document.title = originalTitle; }, 500);
+  }, 150);
+  return true;
+}
+window.saveDcGroupAsPdf = function(idx){
+  if(!currentOrderGroups) return;
+  const key = currentOrderGroups.keys[idx];
+  const lines = currentOrderGroups.groups[key];
+  if(!lines || !lines.length) return;
+  saveDcAsPdf(lines[0].dcNumber || '', lines);
+};
+
+// Bulk reprint: every saved order, grouped by its DC number (one block per DC).
+// Older entries saved before DC numbers existed are grouped by date+client+branch instead.
+function printAllOrders(){
+  if(!orders.length){ toast('No entries to print'); return; }
+  const originalTitle = document.title;
+  document.title = 'All orders';
+  const groups = {};
+  const order_keys = [];
+  orders.forEach(o => {
+    const key = o.dcNumber || `legacy|||${o.orderDate||''}|||${o.clientName||''}|||${o.branch||''}`;
+    if(!groups[key]){ groups[key] = []; order_keys.push(key); }
+    groups[key].push(o);
+  });
+  $('printReceipt').innerHTML = companyLetterheadHtml() +
+    order_keys.map((key, i) => {
+      const lines = groups[key];
+      const label = key.startsWith('legacy|||') ? '' : key;
+      const block = dcGroupBlockHtml(label, lines);
+      // First form shares the page with the letterhead; every form after it
+      // starts fresh on a new printed page, each with its own letterhead/logo.
+      return i === 0 ? block : `<div class="dcPageBreak">${companyLetterheadHtml()}${block}</div>`;
+    }).join('');
+  setTimeout(()=>{
+    window.print();
+    setTimeout(()=>{ document.title = originalTitle; }, 500);
+  }, 150);
+}
+
+// Advances to the next DC number after a form is finalized/printed.
+async function startNewDc(){
+  currentDcNumber = nextDcNumber();
+  currentBillSaleType = '';
+  preEditDcNumber = null;
+  try{
+    await window.storage.set('dcCounter', String(dcCounter), true);
+    await window.storage.set('currentDcNumber', currentDcNumber, true);
+  }catch(e){ console.error('DC counter save failed', e); }
+  if($('dcNumberDisplay')) $('dcNumberDisplay').value = currentDcNumber;
+  updateEditingDcBadge();
+  refreshCurrentBillPanel();
+  renderDcCounterStatus();
+}
+
+function renderDcCounterStatus(){
+  const el = $('dcCounterStatus');
+  if(!el) return;
+  el.textContent = `Currently on ${currentDcNumber || '—'}. ${orders.length} saved line(s) across ${new Set(orders.map(o=>o.dcNumber).filter(Boolean)).size} DC number(s) total.`;
+}
+
+$('resetDcCounterBtn').addEventListener('click', async ()=>{
+  if(!confirm('Reset DC numbering back to DC-01? Any orders already saved keep their own DC numbers — this only resets what number comes next.')) return;
+  dcCounter = 0;
+  currentDcNumber = nextDcNumber();
+  preEditDcNumber = null;
+  try{
+    await window.storage.set('dcCounter', String(dcCounter), true);
+    await window.storage.set('currentDcNumber', currentDcNumber, true);
+  }catch(e){ console.error('DC counter reset failed', e); }
+  if($('dcNumberDisplay')) $('dcNumberDisplay').value = currentDcNumber;
+  updateEditingDcBadge();
+  renderDcCounterStatus();
+  toast('DC numbering reset — next form is '+currentDcNumber);
+});
+
+$('wipeOrdersBtn').addEventListener('click', async ()=>{
+  if(!confirm('This permanently deletes ALL saved orders/lines in this app. Client master is kept. This cannot be undone. Continue?')) return;
+  if(!confirm('Are you absolutely sure? Type OK in the next box to confirm you have a backup if needed.')) return;
+  orders = [];
+  dcCounter = 0;
+  preEditDcNumber = null;
+  await saveOrders();
+  currentDcNumber = nextDcNumber();
+  try{
+    await window.storage.set('dcCounter', String(dcCounter), true);
+    await window.storage.set('currentDcNumber', currentDcNumber, true);
+  }catch(e){ console.error('DC counter reset failed', e); }
+  if($('dcNumberDisplay')) $('dcNumberDisplay').value = currentDcNumber;
+  updateEditingDcBadge();
+  renderOrdersTable();
+  renderDcCounterStatus();
+  toast('All saved orders cleared — starting fresh at '+currentDcNumber);
+});
+
+// Groups all saved line items by their DC number, so the Saved orders tab shows
+// one row per delivery challan instead of one row per line item. Older entries
+// saved before DC numbers existed are grouped by date+client+branch instead.
+function groupOrdersByDc(){
+  const groups = {}; const keys = [];
+  orders.forEach(o => {
+    const key = o.dcNumber || `legacy|||${o.orderDate||''}|||${o.clientName||''}|||${o.branch||''}`;
+    if(!groups[key]){ groups[key] = []; keys.push(key); }
+    groups[key].push(o);
+  });
+  return {groups, keys};
+}
+
+// Holds the most recently rendered grouping so the View/Print/Delete button
+// handlers (which reference a group by index, not by raw key) stay in sync.
+let currentOrderGroups = null;
+// Tracks which rows' checkboxes are ticked for "Combine selected & print" —
+// keyed by row index, reset whenever the table is re-rendered.
+let combineSelectedIdx = new Set();
+window.toggleCombineSelect = function(idx, checked){
+  if(checked) combineSelectedIdx.add(idx); else combineSelectedIdx.delete(idx);
+};
+
+function renderOrdersTable(){
+  const wrap = $('ordersTableWrap');
+  combineSelectedIdx = new Set();
+  if(!orders.length){ wrap.innerHTML = '<p class="empty">No orders saved yet.</p>'; currentOrderGroups = null; return; }
+  const {groups, keys} = groupOrdersByDc();
+  const orderedKeys = keys.slice().reverse(); // newest DC first
+  currentOrderGroups = {groups, keys: orderedKeys};
+  const isAdmin = currentUser && currentUser.role === 'admin';
+  wrap.innerHTML = `<table><thead><tr>
+    <th></th><th>DC#</th><th>Date</th><th>Client</th><th>Branch</th><th>Lines</th><th>Total amount</th><th></th>
+  </tr></thead><tbody>
+  ${orderedKeys.map((key, idx) => {
+    const lines = groups[key];
+    const dcLabel = lines[0].dcNumber || key.split('|||')[0] || '—';
+    const customTotal = calcCustomCharges(lines[0].clientName, lines).reduce((s,c)=>s+c.total,0);
+    const linesTotal = computeBillTotals(lines).grand;
+    const grandTotal = linesTotal + customTotal;
+    return `<tr>
+      <td><input type="checkbox" class="combineCheck" onchange="toggleCombineSelect(${idx}, this.checked)"></td>
+      <td><b>${escapeHtml(dcLabel)}</b></td>
+      <td>${lines[0].orderDate || ''}</td>
+      <td>${escapeHtml(lines[0].clientName||'')}</td>
+      <td>${escapeHtml(lines[0].branch||'')}</td>
+      <td>${lines.length}</td>
+      <td><b>&#8377;${fmt(grandTotal)}</b></td>
+      <td>
+        <button class="iconbtn" id="viewBtn-${idx}" style="color:var(--accent);" onclick="toggleDcView(${idx})">View</button>
+        <button class="iconbtn" style="color:var(--accent);" onclick="printDcGroup(${idx})">Print</button>
+        <button class="iconbtn" style="color:var(--accent);" onclick="saveDcGroupAsPdf(${idx})">Save as PDF</button>
+        <button class="iconbtn" style="color:var(--accent);" onclick="editDcGroup(${idx})">Edit</button>
+        ${isAdmin ? `<button class="iconbtn" onclick="deleteDcGroup(${idx})">Delete</button>` : ''}
+      </td>
+    </tr>
+    <tr id="dcDetail-${idx}" style="display:none;">
+      <td colspan="8" style="background:#FAF8F3;">
+        <div style="overflow-x:auto;">
+          ${rateSummaryHtml(lines)}
+          <table><thead><tr>${headerColsHtml(lines.some(o=>o.saleType==='1'))}<th></th></tr></thead><tbody>${lines.map(o=>lineRowOnScreen(o, lines.some(x=>x.saleType==='1'))).join('')}</tbody></table>
+        </div>
+        ${customChargesSummaryHtml(lines[0].clientName, lines)}
+        <div class="row" style="margin-top:10px;">
+          <button class="secondary" type="button" onclick="printDcGroup(${idx})">Print form</button>
+          <button class="secondary" type="button" onclick="saveDcGroupAsPdf(${idx})">Save as PDF</button>
+          ${isAdmin ? `<button class="danger" type="button" onclick="deleteDcGroup(${idx})">Delete this order</button>` : ''}
+        </div>
+      </td>
+    </tr>`;
+  }).join('')}
+  </tbody></table>`;
+}
+
+// On-screen version of a line row — same as lineRow() (used for print) but with an
+// extra Edit button in a trailing cell. Kept separate so the print output is untouched.
+function lineRowOnScreen(o, hasMaking){
+  return lineRow(o, hasMaking).replace('</tr>', `<td><button class="iconbtn" onclick="editOrderLine('${o.id}')">Edit</button></td></tr>`);
+}
+
+window.toggleDcView = function(idx){
+  const row = document.getElementById('dcDetail-'+idx);
+  if(!row) return;
+  const showing = row.style.display !== 'none';
+  row.style.display = showing ? 'none' : 'table-row';
+  const btn = document.getElementById('viewBtn-'+idx);
+  if(btn) btn.textContent = showing ? 'View' : 'Hide';
+};
+
+window.printDcGroup = function(idx){
+  if(!currentOrderGroups) return;
+  const key = currentOrderGroups.keys[idx];
+  const lines = currentOrderGroups.groups[key];
+  if(!lines || !lines.length) return;
+  printGroupLines(lines[0].dcNumber || '', lines);
+};
+
+// Edit at the DC-group level: reopens the WHOLE bill in the Calculator tab —
+// client, date, order number, job card and DC number are restored, and every
+// line already on this DC lists in "Current bill — lines added so far" below
+// the form. From there the person can click Edit on any line to change it, or
+// just fill in a fresh product and Save to add another line to the same DC —
+// the form isn't limited to editing a single line's inputs.
+window.editDcGroup = function(idx){
+  if(!currentOrderGroups) return;
+  const key = currentOrderGroups.keys[idx];
+  const lines = currentOrderGroups.groups[key];
+  if(!lines || !lines.length) return;
+  openDcForEditing(lines);
+};
+
+function openDcForEditing(lines){
+  const first = lines[0];
+  editingOrderId = null;
+  enterDcEditContext(first.dcNumber);
+
+  document.querySelector('[data-tab="calc"]').click();
+  window.scrollTo({top:0, behavior:'smooth'});
+
+  $('clientInput').value = first.clientName || '';
+  $('orderDate').value = first.orderDate || todayStr();
+  $('jobCardNumber').value = first.jobCardNumber || '';
+
+  const targetClient = findClientByName(first.clientName);
+  chargeToggleClientId = targetClient ? targetClient.id : null;
+  currentDcIncludedCharges = Array.isArray(first.includedCharges) ? [...first.includedCharges] : [];
+
+  // Header restored — leave the item fields blank and ready for a new product
+  // on this same bill. (Use Edit on a specific line below to change that line.)
+  $('category').value=''; $('subCategory').value='';
+  $('particulars').value='';
+  $('orderNumber').value='';
+  $('pcs').value='1';
+  ['grwt','stwt','totalTouch','stRatePerGram','otherCharges'].forEach(id=>$(id).value='0');
+  $('melting').value='92';
+  // This bill's rate carries over from its already-saved lines, so it doesn't
+  // need to be retyped for the next product added to the same DC.
+  $('bulkRate').value = first.rate || '';
+  $('rate').value = first.rate || 0;
+  rateEditSource = 'rate';
+  $('stoneTypeSelect').value=''; $('stoneTypeField').style.display='none';
+  $('saveOrderBtn').textContent = 'Save';
+
+  applyClientPreset();
+  if($('branchSelect') && first.branch) $('branchSelect').value = first.branch;
+  refreshCurrentBillPanel();
+  toast(`Editing ${currentDcNumber} — add another product below, or click Edit on a line in "Current bill" to change it`);
+}
+
+// ── PREVIOUS / NEXT FORM NAVIGATION ─────────────────────────────────
+// Lets the person step through every saved DC, one form at a time, from
+// right below the calculator — without going to the Saved orders tab.
+// Sorted numerically by DC number so it always steps in the true saved order.
+function sortedDcNumbers(){
+  const set = new Set(orders.map(o=>o.dcNumber).filter(Boolean));
+  return [...set].sort((a,b)=>{
+    const ma = /^DC-(\d+)$/i.exec(a), mb = /^DC-(\d+)$/i.exec(b);
+    if(ma && mb) return parseInt(ma[1],10) - parseInt(mb[1],10);
+    return a.localeCompare(b);
+  });
+}
+function refreshFormNav(){
+  const label = $('formNavLabel');
+  const list = sortedDcNumbers();
+  if(label){
+    label.textContent = list.length ? `${currentDcNumber || '—'} (${list.indexOf(currentDcNumber)+1 || '—'} of ${list.length} saved)` : 'No saved forms yet';
+  }
+}
+function goToDc(dcNumber){
+  const lines = orders.filter(o=>o.dcNumber===dcNumber);
+  if(!lines.length){ toast('No lines found for '+dcNumber); return; }
+  openDcForEditing(lines);
+}
+if($('prevFormBtn')) $('prevFormBtn').addEventListener('click', ()=>{
+  const list = sortedDcNumbers();
+  if(!list.length){ toast('No saved forms yet'); return; }
+  let idx = list.indexOf(currentDcNumber);
+  if(idx === -1) idx = list.length; // currently on a fresh/unsaved DC — step back from the end
+  if(idx <= 0){ toast('Already at the first saved form'); return; }
+  goToDc(list[idx-1]);
+});
+if($('nextFormBtn')) $('nextFormBtn').addEventListener('click', ()=>{
+  const list = sortedDcNumbers();
+  if(!list.length){ toast('No saved forms yet'); return; }
+  const idx = list.indexOf(currentDcNumber);
+  if(idx === -1 || idx >= list.length-1){ toast('Already at the last saved form'); return; }
+  goToDc(list[idx+1]);
+});
+
+// Loads one saved line item back into the Calculator tab for editing. Saving
+// (via the same Save button, now labelled "Update line") overwrites this line
+// in place rather than adding a new one; the DC number is kept unchanged.
+window.editOrderLine = function(id){
+  const o = orders.find(x=>x.id===id);
+  if(!o) return;
+  editingOrderId = id;
+  document.querySelector('[data-tab="calc"]').click();
+  window.scrollTo({top:0, behavior:'smooth'});
+
+  enterDcEditContext(o.dcNumber);
+
+  $('clientInput').value = o.clientName || '';
+  $('orderDate').value = o.orderDate || todayStr();
+  $('orderNumber').value = o.orderNumber || '';
+  $('jobCardNumber').value = o.jobCardNumber || '';
+  $('category').value = o.category || '';
+  $('subCategory').value = o.subCategory || '';
+
+  const targetClient = findClientByName(o.clientName);
+  chargeToggleClientId = targetClient ? targetClient.id : null; // matches what applyClientPreset will resolve, so it won't reset our loaded selection below
+  currentDcIncludedCharges = Array.isArray(o.includedCharges) ? [...o.includedCharges] : [];
+  applyClientPreset();
+
+  if($('branchSelect') && o.branch) $('branchSelect').value = o.branch;
+  if(o.subCategory === 'Stone' && o.stoneType){
+    const opts = $('stoneTypeSelect').options;
+    for(let i=0;i<opts.length;i++){ if(o.stoneType.indexOf(opts[i].text) === 0){ $('stoneTypeSelect').selectedIndex = i; break; } }
+  }
+  $('particulars').value = o.particulars || '';
+  $('pcs').value = o.pcs != null ? o.pcs : 1;
+  $('grwt').value = o.grwt || 0;
+  $('stwt').value = o.stwt || 0;
+  $('melting').value = o.melting != null ? o.melting : 92;
+  $('totalTouch').value = o.totalTouch || 0;
+  $('stRatePerGram').value = o.stRatePerGram || 0;
+  $('otherChargesType').value = o.otherChargesType || 'flat';
+  $('otherCharges').value = (o.otherChargesRaw != null) ? o.otherChargesRaw : (o.otherCharges || 0);
+  $('saleType').value = o.saleType || '1';
+  rateEditSource = 'rate';
+  $('rate').value = o.rate || 0;
+  $('bulkRate').value = o.rate || '';
+
+  calculate();
+  renderOrderChargeToggles(findClientByName(o.clientName));
+  $('saveOrderBtn').textContent = 'Update line';
+  refreshCurrentBillPanel();
+  toast('Editing this line — use "Update line" to save your changes');
+};
+
+// Deleting a saved order is admin-only — staff logins can view and print but not delete.
+window.deleteDcGroup = async function(idx){
+  if(!currentUser || currentUser.role !== 'admin'){ toast('Only admin can delete saved orders'); return; }
+  if(!currentOrderGroups) return;
+  const key = currentOrderGroups.keys[idx];
+  const lines = currentOrderGroups.groups[key];
+  if(!lines || !lines.length) return;
+  if(!confirm(`Delete ${lines[0].dcNumber || 'this order'} — all ${lines.length} line(s)? This cannot be undone.`)) return;
+  const ids = new Set(lines.map(o=>o.id));
+  orders = orders.filter(o=>!ids.has(o.id));
+  await saveOrders();
+  renderOrdersTable();
+  refreshCurrentBillPanel();
+  toast('Order deleted');
+};
+
+// ── STONE TYPES ──
+let stoneTypes = [];
+const DEFAULT_STONE_TYPES = [
+  {id:'st1', name:'Zircon stone', chargeMethod:'pergram'},
+  {id:'st2', name:'Steel belt',   chargeMethod:'perpcs'},
+  {id:'st3', name:'Rolex belt',   chargeMethod:'perpcs'},
+  {id:'st4', name:'Round belt',   chargeMethod:'perpcs'},
+  {id:'st5', name:'Other belts',  chargeMethod:'perpcs'},
+];
+async function loadStoneTypes(){
+  try{
+    const s = await window.storage.get('stoneTypes', true);
+    stoneTypes = s ? JSON.parse(s.value) : [];
+  }catch(e){ stoneTypes=[]; }
+  if(!stoneTypes.length){
+    stoneTypes = DEFAULT_STONE_TYPES;
+    await saveStoneTypes();
+  }
+  renderStoneTypeSelect();
+  renderStoneTypesTable();
+  renderAllClientStoneRatesForms();
+}
+async function saveStoneTypes(){
+  try{
+    const res = await window.storage.set('stoneTypes', JSON.stringify(stoneTypes), true);
+    if(!res) throw new Error('storage.set returned null');
+    return true;
+  }catch(e){
+    console.error(e);
+    toast('⚠️ Could not save to storage — see the warning banner at the top');
+    return false;
+  }
+}
+function renderStoneTypeSelect(){
+  const sel = $('stoneTypeSelect');
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">Select stone type...</option>' +
+    stoneTypes.map(s=>`<option value="${s.id}">${escapeHtml(s.name)}</option>`).join('');
+  sel.value = cur;
+}
+function renderStoneTypesTable(){
+  const wrap = $('stoneTypesTableWrap');
+  if(!stoneTypes.length){ wrap.innerHTML='<p class="empty">No stone types.</p>'; return; }
+  wrap.innerHTML = `<table><thead><tr><th>#</th><th>Name</th><th>Charge method</th><th></th></tr></thead><tbody>
+  ${stoneTypes.map((s,i)=>`<tr>
+    <td>${i+1}</td>
+    <td>${escapeHtml(s.name)}</td>
+    <td>${s.chargeMethod==='perpcs'?'Per piece (Pcs × rate)':'Per gram (St.wt × rate)'}</td>
+    <td><button class="iconbtn" onclick="deleteStoneType('${s.id}')">Delete</button></td>
+  </tr>`).join('')}
+  </tbody></table>`;
+}
+window.deleteStoneType = async function(id){
+  stoneTypes = stoneTypes.filter(s=>s.id!==id);
+  await saveStoneTypes();
+  renderStoneTypeSelect();
+  renderStoneTypesTable();
+  renderAllClientStoneRatesForms();
+  toast('Stone type deleted');
+}
+$('saveStoneTypeBtn').addEventListener('click', async ()=>{
+  const name = $('stoneTypeName').value.trim();
+  if(!name){ toast('Enter a stone type name'); return; }
+  if(stoneTypes.find(s=>s.name.toLowerCase()===name.toLowerCase())){ toast('Already exists'); return; }
+  stoneTypes.push({id: uid(), name, chargeMethod: $('stoneTypeChargeMethod').value});
+  await saveStoneTypes();
+  $('stoneTypeName').value='';
+  renderStoneTypeSelect();
+  renderStoneTypesTable();
+  renderAllClientStoneRatesForms();
+  toast('Stone type added');
+});
+
+// ── CLIENT STONE RATES FORM ──
+// Each stone type (Zircon stone, Steel belt, Rolex belt, etc.) gets its own
+// charge-method choice PER CLIENT: "Pcs × rate" or "Weight (g) × rate".
+// Stored per client as: { [stoneTypeId]: { method: 'perpcs'|'pergram', rate: number } }
+let clientStoneRatesLocal = {};
+// Turns old data (plain number) or new data (object) into a normalized {method, rate} entry.
+function normalizeStoneRateEntry(entry, stoneTypeDef){
+  const fallbackMethod = stoneTypeDef ? stoneTypeDef.chargeMethod : 'pergram';
+  if(entry && typeof entry === 'object'){
+    return { method: entry.method || fallbackMethod, rate: parseFloat(entry.rate)||0 };
+  }
+  // legacy format: entry was just a number
+  return { method: fallbackMethod, rate: parseFloat(entry)||0 };
+}
+function renderClientStoneRates(rates){
+  clientStoneRatesLocal = {};
+  stoneTypes.forEach(s=>{
+    const existing = rates ? rates[s.id] : null;
+    clientStoneRatesLocal[s.id] = normalizeStoneRateEntry(existing, s);
+  });
+  refreshClientStoneRatesUI();
+}
+function refreshClientStoneRatesUI(){
+  const wrap = $('clientStoneRatesWrap');
+  if(!stoneTypes.length){ wrap.innerHTML='<p class="small">No stone types defined yet — add them in the Stone types tab first.</p>'; return; }
+  stoneTypes.forEach(s=>{
+    if(!clientStoneRatesLocal[s.id]) clientStoneRatesLocal[s.id] = normalizeStoneRateEntry(null, s);
+  });
+  wrap.innerHTML = `<div class="grid g3">
+    ${stoneTypes.map(s=>{
+      const entry = clientStoneRatesLocal[s.id];
+      return `
+      <div class="field" style="border:1px solid var(--line);border-radius:4px;padding:8px;">
+        <label style="margin-bottom:6px;">${escapeHtml(s.name)}</label>
+        <select style="margin-bottom:6px;" onchange="clientStoneRatesLocal['${s.id}'].method=this.value">
+          <option value="pergram" ${entry.method==='pergram'?'selected':''}>Per gram (St.wt &times; rate)</option>
+          <option value="perpcs" ${entry.method==='perpcs'?'selected':''}>Per piece (Pcs &times; rate)</option>
+        </select>
+        <input type="number" step="0.01" placeholder="Rate (&#8377;)" value="${entry.rate||0}"
+          oninput="clientStoneRatesLocal['${s.id}'].rate=parseFloat(this.value)||0">
+      </div>`;
+    }).join('')}
+  </div>`;
+}
+function readClientStoneRates(){
+  return JSON.parse(JSON.stringify(clientStoneRatesLocal));
+}
+function renderAllClientStoneRatesForms(){
+  // re-render if client form is open
+  refreshClientStoneRatesUI();
+}
+
+// ── STONE TYPES TAB INIT ──
+loadStoneTypes();
+
+// ── TAB HANDLER ADDITION ──
+document.querySelectorAll('.tab').forEach(t=>{
+  if(t.dataset.tab==='stonetypes'){
+    t.addEventListener('click', ()=>{ renderStoneTypesTable(); });
+  }
+});
+let currentUser = null;
+let appUsers = [];
+const DEFAULT_ADMIN = {id:'admin', username:'admin', passwordHash: btoa('admin123'), role:'admin'};
+
+function simpleHash(s){ return btoa(unescape(encodeURIComponent(s))); }
+
+async function loadUsers(){
+  try{
+    const u = await window.storage.get('appUsers', true);
+    appUsers = u ? JSON.parse(u.value) : [];
+  }catch(e){ appUsers = []; }
+  if(!appUsers.find(u=>u.username==='admin')){
+    appUsers.unshift(DEFAULT_ADMIN);
+    await saveUsers();
+  }
+}
+async function saveUsers(){
+  try{
+    const res = await window.storage.set('appUsers', JSON.stringify(appUsers), true);
+    if(!res) throw new Error('storage.set returned null');
+    return true;
+  }catch(e){
+    console.error('users save failed', e);
+    toast('⚠️ Could not save to storage — see the warning banner at the top');
+    return false;
+  }
+}
+function renderUsersTable(){
+  const wrap = $('usersTableWrap');
+  if(!appUsers.length){ wrap.innerHTML='<p class="empty">No users.</p>'; return; }
+  wrap.innerHTML = `<table><thead><tr><th>Username</th><th>Role</th><th></th></tr></thead><tbody>
+  ${appUsers.map(u=>`<tr>
+    <td>${escapeHtml(u.username)}</td>
+    <td>${u.role==='admin'?'Admin':'User'}</td>
+    <td>${u.username===currentUser?.username?'<span class="small">(you)</span>':`<button class="iconbtn" onclick="deleteUser('${u.id}')">Delete</button>`}</td>
+  </tr>`).join('')}
+  </tbody></table>`;
+}
+window.deleteUser = async function(id){
+  if(appUsers.length<=1){ toast('Cannot delete last user'); return; }
+  appUsers = appUsers.filter(u=>u.id!==id);
+  await saveUsers();
+  renderUsersTable();
+  toast('User deleted');
+}
+
+// login
+$('loginBtn').addEventListener('click', doLogin);
+['loginUser','loginPass'].forEach(id=>$(id).addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();}));
+async function doLogin(){
+  await loadUsers();
+  const uname = $('loginUser').value.trim();
+  const pass  = $('loginPass').value;
+  if(!uname||!pass){ $('loginErr').textContent='Enter username and password.'; return; }
+  const user = appUsers.find(u=>u.username===uname && u.passwordHash===simpleHash(pass));
+  if(!user){ $('loginErr').textContent='Incorrect username or password.'; return; }
+  currentUser = user;
+  $('loginScreen').style.display='none';
+  $('mainApp').style.display='block';
+  $('loggedInAs').textContent = `Signed in as ${user.username} (${user.role})`;
+  if(!storageIsAvailable) $('storageWarningBanner').style.display = 'block';
+  // hide Users tab for non-admins
+  document.querySelector('[data-tab="users"]').style.display = user.role==='admin' ? '' : 'none';
+  updateDcFieldEditability();
+  loadData();
+  renderCustomChargesForm([]);
+  $('orderDate').value = todayStr();
+  applyClientPreset();
+  updateSyncStatus();
+  setInterval(updateSyncStatus, 15000);
+  // Quietly re-pull shared lists from the cloud every 30s and on tab focus,
+  // so entries made on other office computers show up here without needing
+  // a manual reload. Only re-renders reference tables/lists — never touches
+  // whatever the person is currently typing into the calculator form.
+  if(SYNC_ENABLED){
+    setInterval(backgroundResync, 30000);
+    window.addEventListener('focus', backgroundResync);
+  }
+}
+function updateSyncStatus(){
+  const el = $('syncStatus');
+  if(!el) return;
+  if(!SYNC_ENABLED){
+    el.textContent = '⚪ Cloud sync not set up — data stays on this device only';
+    el.style.color = 'var(--muted)';
+  } else if(lastCloudSyncOk){
+    el.textContent = '🟢 Synced across office';
+    el.style.color = 'var(--good)';
+  } else {
+    el.textContent = '🔴 Sync problem — check internet connection';
+    el.style.color = 'var(--danger)';
+  }
+}
+async function backgroundResync(){
+  try{
+    await Promise.all([loadClientsOnly(), loadOrdersOnly(), loadParticularsOnly(), loadCommonParticularsOnly(), loadStoneTypesOnly()]);
+    renderClientSelect(); renderClientsTable();
+    renderOrdersTable(); renderParticularsDatalist();
+    renderCommonParticularsList();
+    renderStoneTypeSelect(); renderStoneTypesTable();
+    refreshCurrentBillPanel();
+    applySaleTypeLock();
+  }catch(e){ console.error('background resync failed', e); }
+  updateSyncStatus();
+}
+async function loadClientsOnly(){
+  try{ const c = await window.storage.get('clients', true); clients = c ? JSON.parse(c.value) : clients; }catch(e){}
+}
+async function loadOrdersOnly(){
+  try{ const o = await window.storage.get('orders', true); orders = o ? JSON.parse(o.value) : orders; }catch(e){}
+}
+async function loadParticularsOnly(){
+  try{ const p = await window.storage.get('particularsHistory', true); particularsHistory = p ? JSON.parse(p.value) : particularsHistory; }catch(e){}
+}
+async function loadCommonParticularsOnly(){
+  try{ const cp = await window.storage.get('commonParticulars', true); commonParticulars = cp ? JSON.parse(cp.value) : commonParticulars; }catch(e){}
+}
+async function loadStoneTypesOnly(){
+  try{ const s = await window.storage.get('stoneTypes', true); stoneTypes = s ? JSON.parse(s.value) : stoneTypes; }catch(e){}
+}
+$('logoutBtn').addEventListener('click', ()=>{
+  currentUser = null;
+  $('loginScreen').style.display='flex';
+  $('mainApp').style.display='none';
+  $('loginUser').value=''; $('loginPass').value=''; $('loginErr').textContent='';
+});
+
+// save user
+let editingUserId = null;
+
+// ---- backup & restore (carries data over when you move to a new copy of this file) ----
+$('restoreBackupBtn').addEventListener('click', ()=> $('restoreBackupInput').click());
+$('downloadBackupBtn').addEventListener('click', ()=>{
+  const backup = {
+    exportedAt: new Date().toISOString(),
+    companyName,
+    companyLogo,
+    dcCounter,
+    currentDcNumber,
+    clients,
+    orders,
+    particularsHistory,
+    commonParticulars,
+    stoneTypes,
+    appUsers
+  };
+  const blob = new Blob([JSON.stringify(backup, null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const stamp = new Date().toISOString().slice(0,10);
+  a.href = url;
+  a.download = `${(companyName||'calculator').replace(/[^a-z0-9]+/gi,'-')}-backup-${stamp}.json`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+  $('backupNote').textContent = `Backup downloaded — keep this file safe and use "Restore from backup" on the next copy you open.`;
+});
+
+$('restoreBackupInput').addEventListener('change', async (e)=>{
+  const file = e.target.files[0];
+  if(!file) return;
+  if(!confirm('This will replace all current clients, orders, stone types and users in this file with the ones from the backup. Continue?')){
+    e.target.value = '';
+    return;
+  }
+  try{
+    const text = await file.text();
+    const backup = JSON.parse(text);
+    if(backup.companyName) companyName = backup.companyName;
+    if(backup.companyLogo != null) companyLogo = backup.companyLogo;
+    if(Array.isArray(backup.clients)) clients = backup.clients;
+    if(Array.isArray(backup.orders)) orders = backup.orders;
+    if(Array.isArray(backup.particularsHistory)) particularsHistory = backup.particularsHistory;
+    if(Array.isArray(backup.commonParticulars)) commonParticulars = backup.commonParticulars;
+    if(Array.isArray(backup.stoneTypes)) stoneTypes = backup.stoneTypes;
+    if(Array.isArray(backup.appUsers)) appUsers = backup.appUsers;
+    if(backup.dcCounter != null) dcCounter = backup.dcCounter;
+    if(backup.currentDcNumber) currentDcNumber = backup.currentDcNumber;
+
+    await saveClients();
+    await saveOrders();
+    await saveParticularsHistory();
+    await saveCommonParticulars();
+    await saveStoneTypes();
+    await saveUsers();
+    try{
+      await window.storage.set('companyName', companyName, true);
+      if(companyLogo) await window.storage.set('companyLogo', companyLogo, true);
+      await window.storage.set('dcCounter', String(dcCounter), true);
+      await window.storage.set('currentDcNumber', currentDcNumber, true);
+    }catch(err){ console.error('backup settings save failed', err); }
+
+    if($('companyName')) $('companyName').value = companyName;
+    showLogoPreview();
+    if($('dcNumberDisplay')) $('dcNumberDisplay').value = currentDcNumber;
+    renderClientSelect(); renderClientsTable();
+    renderOrdersTable(); renderParticularsDatalist();
+    renderCommonParticularsList();
+    renderStoneTypeSelect(); renderStoneTypesTable();
+    renderUsersTable();
+    $('backupNote').textContent = `Restored ${clients.length} clients and ${orders.length} orders from backup (exported ${backup.exportedAt ? new Date(backup.exportedAt).toLocaleString() : 'unknown date'}).`;
+    toast('Backup restored');
+  }catch(err){
+    console.error('restore failed', err);
+    $('backupNote').textContent = '⚠️ Could not read that file — make sure it\'s a backup downloaded from this app.';
+  }
+  e.target.value = '';
+});
+
+function showLogoPreview(){
+  const wrap = $('companyLogoPreviewWrap');
+  const img = $('companyLogoPreview');
+  if(!wrap || !img) return;
+  if(companyLogo){ img.src = companyLogo; wrap.style.display = 'block'; }
+  else { wrap.style.display = 'none'; }
+}
+if($('companyLogoInput')) $('companyLogoInput').addEventListener('change', async (e)=>{
+  const file = e.target.files[0];
+  if(!file) return;
+  if(file.size > 1024*1024*2){ toast('Logo image is too large — please use one under 2MB'); e.target.value=''; return; }
+  try{
+    const dataUrl = await new Promise((res, rej)=>{
+      const r = new FileReader();
+      r.onload = ()=>res(r.result);
+      r.onerror = ()=>rej(new Error('read failed'));
+      r.readAsDataURL(file);
+    });
+    companyLogo = dataUrl;
+    await window.storage.set('companyLogo', companyLogo, true);
+    showLogoPreview();
+    toast('Logo saved');
+  }catch(err){ console.error('logo save failed', err); toast('Could not save logo — try again'); }
+  e.target.value = '';
+});
+if($('removeLogoBtn')) $('removeLogoBtn').addEventListener('click', async ()=>{
+  companyLogo = '';
+  try{ await window.storage.delete('companyLogo', true); }catch(e){ /* ignore */ }
+  showLogoPreview();
+  toast('Logo removed');
+});
+$('saveCompanyBtn').addEventListener('click', async ()=>{
+  const name = $('companyName').value.trim();
+  if(!name){ toast('Enter a company name'); return; }
+  companyName = name;
+  try{ await window.storage.set('companyName', companyName, true); toast('Company name saved'); }
+  catch(e){ toast('Could not save — try again'); }
+});
+$('saveUserBtn').addEventListener('click', async ()=>{
+  const username = $('newUsername').value.trim();
+  const password = $('newPassword').value;
+  const role     = $('newRole').value;
+  if(!username){ toast('Username required'); return; }
+  if(!password && !editingUserId){ toast('Password required'); return; }
+  if(appUsers.find(u=>u.username===username && u.id!==(editingUserId||''))){
+    toast('Username already exists'); return;
+  }
+  if(editingUserId){
+    appUsers = appUsers.map(u=>u.id===editingUserId?{...u, username, role, ...(password?{passwordHash:simpleHash(password)}:{})}:u);
+  } else {
+    appUsers.push({id:uid(), username, passwordHash:simpleHash(password), role});
+  }
+  await saveUsers();
+  renderUsersTable();
+  $('newUsername').value=''; $('newPassword').value=''; $('newRole').value='user';
+  editingUserId=null;
+  toast('User saved');
+});
+$('clearUserBtn').addEventListener('click', ()=>{
+  $('newUsername').value=''; $('newPassword').value=''; $('newRole').value='user'; editingUserId=null;
+});
+$('chgPassBtn').addEventListener('click', async ()=>{
+  const old = $('chgOld').value;
+  const nw  = $('chgNew').value;
+  const cnf = $('chgConfirm').value;
+  if(!currentUser){ toast('Not logged in'); return; }
+  if(simpleHash(old)!==currentUser.passwordHash){ toast('Current password incorrect'); return; }
+  if(nw.length < 4){ toast('New password must be at least 4 characters'); return; }
+  if(nw!==cnf){ toast('Passwords do not match'); return; }
+  appUsers = appUsers.map(u=>u.id===currentUser.id?{...u, passwordHash:simpleHash(nw)}:u);
+  currentUser = {...currentUser, passwordHash:simpleHash(nw)};
+  await saveUsers();
+  $('chgOld').value=''; $('chgNew').value=''; $('chgConfirm').value='';
+  toast('Password changed');
+});
+
+// ---- keyboard shortcuts ----
+// Alt+S  Save line   Alt+P  Save form   Alt+N  New form   Alt+R  Clear form
+// Only active once signed in, on the Calculator tab, so they never fire while
+// typing on the login screen or interfere with other tabs.
+document.addEventListener('keydown', (e)=>{
+  if(!e.altKey) return;
+  if($('mainApp').style.display === 'none') return;
+  if($('tab-calc').style.display === 'none') return;
+  const key = e.key.toLowerCase();
+  if(key === 's'){ e.preventDefault(); $('saveOrderBtn').click(); }
+  else if(key === 'p'){ e.preventDefault(); $('saveFormBtn').click(); }
+  else if(key === 'n'){ e.preventDefault(); $('newFormBtn').click(); }
+  else if(key === 'r'){ e.preventDefault(); $('clearOrderBtn').click(); }
+});
+
+loadData();
+renderCustomChargesForm([]);
+$('orderDate').value = todayStr();
+applyClientPreset();
+</script>
+</div><!-- end mainApp -->
+</body>
+</html>
